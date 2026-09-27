@@ -23,10 +23,27 @@ export default async function handler(req, res) {
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Cache-Control", "no-store");
 
+      const trimmed = text.trim();
+
+      if (!trimmed) {
+        return res.status(502).json({
+          success: false,
+          error: "Google Apps Script returned an empty response.",
+          upstreamStatus: response.status,
+          upstreamContentType: response.headers.get("content-type") || ""
+        });
+      }
+
       try {
-        return res.status(response.status).json(JSON.parse(text));
+        return res.status(response.status).json(JSON.parse(trimmed));
       } catch {
-        return res.status(response.status).send(text);
+        return res.status(502).json({
+          success: false,
+          error: "Google Apps Script returned a non-JSON response.",
+          upstreamStatus: response.status,
+          upstreamContentType: response.headers.get("content-type") || "",
+          bodyPreview: trimmed.slice(0, 500)
+        });
       }
     }
 
@@ -54,10 +71,27 @@ export default async function handler(req, res) {
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Cache-Control", "no-store");
 
+      const trimmed = text.trim();
+
+      if (!trimmed) {
+        return res.status(502).json({
+          success: false,
+          error: "Google Apps Script returned an empty response.",
+          upstreamStatus: response.status,
+          upstreamContentType: response.headers.get("content-type") || ""
+        });
+      }
+
       try {
-        return res.status(response.status).json(JSON.parse(text));
+        return res.status(response.status).json(JSON.parse(trimmed));
       } catch {
-        return res.status(response.status).send(text);
+        return res.status(502).json({
+          success: false,
+          error: "Google Apps Script returned a non-JSON response.",
+          upstreamStatus: response.status,
+          upstreamContentType: response.headers.get("content-type") || "",
+          bodyPreview: trimmed.slice(0, 500)
+        });
       }
     }
 
