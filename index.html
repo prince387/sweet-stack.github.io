@@ -459,7 +459,9 @@
 
     } catch (error) {
       console.error("Product question error:", error);
-      status.textContent = "Unable to send your question. Please try again.";
+      status.textContent =
+        "Unable to send your question. " +
+        (error && error.message ? error.message : "Please try again.");
       button.disabled = false;
       button.textContent = "Send Question";
     }
