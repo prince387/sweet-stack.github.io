@@ -27,18 +27,48 @@ export default async function handler(req, res) {
         ? JSON.parse(req.body || "{}")
         : (req.body || {});
 
-    const response = await fetch(target.toString(), {
+    const body = JSON.stringify(update);
+
+    let response = await fetch(target.toString(), {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(update),
-      redirect: "follow"
+      body,
+      redirect: "manual"
     });
 
-    const text = await response.text();
+    // Google Apps Script commonly responds to /exec POSTs
+    // with a redirect. Re-send the POST body to the
+    // redirect target so Telegram callback updates are
+    // not converted into a GET request.
+    if (
+      response.status >= 300 &&
+      response.status < 400
+    ) {
+      const location = response.headers.get("location");
 
-    if (!text.trim()) {
+      if (!location) {
+        return res.status(502).json({
+          success: false,
+          error: "Google Apps Script returned a redirect without a Location header.",
+          upstreamStatus: response.status
+        });
+      }
+
+      response = await fetch(location, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body,
+        redirect: "follow"
+      });
+    }
+
+    const responseText = await response.text();
+
+    if (!responseText.trim()) {
       return res.status(502).json({
         success: false,
         error: "Google Apps Script returned an empty response.",
@@ -47,14 +77,14 @@ export default async function handler(req, res) {
     }
 
     try {
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(responseText);
       return res.status(200).json(parsed);
     } catch {
       return res.status(502).json({
         success: false,
         error: "Google Apps Script returned a non-JSON response.",
         upstreamStatus: response.status,
-        bodyPreview: text.slice(0, 500)
+        bodyPreview: responseText.slice(0, 500)
       });
     }
   } catch (error) {
