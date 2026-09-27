@@ -52,17 +52,18 @@ export default async function handler(req, res) {
       target.searchParams.set("action", "order");
       target.searchParams.set("key", secret);
 
-      let orderRequest;
+      let orderData;
 
       if (typeof req.body === "string") {
-        orderRequest = JSON.parse(req.body || "{}");
+        orderData = JSON.parse(req.body || "{}");
       } else {
-        orderRequest = req.body || {};
+        orderData = req.body || {};
       }
 
-      orderRequest.action = "order";
-
-      const body = JSON.stringify(orderRequest);
+      const body = JSON.stringify({
+        action: "order",
+        orderData: orderData
+      });
 
       const response = await fetch(target.toString(), {
         method: "POST",
