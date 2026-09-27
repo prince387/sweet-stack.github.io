@@ -15,6 +15,7 @@
     .page{display:none;width:100%;min-height:100vh;background:#fff}
     .page.active{display:block}
     .header{background:#0b5ed7;color:#fff;padding:18px 16px}
+    .back-to-bot{display:inline-flex;align-items:center;gap:6px;margin-top:12px;border:1px solid rgba(255,255,255,.7);background:transparent;color:#fff;border-radius:9px;padding:9px 12px;font-size:13px;font-weight:bold;cursor:pointer}
     .brand{font-size:24px;font-weight:bold}
     .tagline{font-size:13px;margin-top:4px;opacity:.9}
     .search-area{padding:14px 16px;background:#fff;position:sticky;top:0;z-index:10;border-bottom:1px solid #e5e7eb}
@@ -104,6 +105,7 @@
     <header class="header">
       <div class="brand">SWEET MART</div>
       <div class="tagline">Shop with ease. Get it delivered.</div>
+      <button id="backToBotButton" class="back-to-bot" type="button">← Back to Bot</button>
     </header>
     <div class="search-area">
       <input type="search" id="searchInput" class="search" placeholder="Search products..." autocomplete="off">
@@ -229,6 +231,26 @@
     } catch (e) {
       console.log("Telegram initialization skipped.", e);
     }
+  }
+
+  function closeMiniAppToBot() {
+    try {
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.close();
+        return;
+      }
+    } catch (e) {
+      console.log("Telegram close unavailable.", e);
+    }
+
+    try {
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+    } catch (e) {}
+
+    window.location.href = "/";
   }
 
   function updateTelegramBackButton() {
@@ -554,6 +576,8 @@
     btn.textContent = "🛒 Cart (" + totalItems + ")";
     btn.style.display = totalItems > 0 && currentPage === "shopPage" ? "block" : "none";
   }
+
+  document.getElementById("backToBotButton").addEventListener("click", closeMiniAppToBot);
 
   document.getElementById("cartButton").addEventListener("click", function() {
     renderCart();
