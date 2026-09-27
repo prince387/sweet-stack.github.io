@@ -18,57 +18,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const target = new URL(gasUrl);
-    target.searchParams.set("bot", "customer");
-    target.searchParams.set("key", secret);
-
     const update =
       typeof req.body === "string"
         ? JSON.parse(req.body || "{}")
         : (req.body || {});
 
-    const body = JSON.stringify(update);
+    /*
+     * Google Apps Script Content Service redirects responses
+     * from the /exec URL to a one-time script.googleusercontent.com
+     * URL. For customer Telegram callbacks we therefore relay
+     * the Telegram update through Apps Script doGet instead of
+     * POST, avoiding the POST-redirect problem.
+     */
+    const payload = Buffer
+      .from(JSON.stringify(update), "utf8")
+      .toString("base64url");
 
-    let response = await fetch(target.toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body,
-      redirect: "manual"
+    const target = new URL(gasUrl);
+
+    target.searchParams.set("bot", "customer");
+    target.searchParams.set("key", secret);
+    target.searchParams.set("payload64", payload);
+
+    const response = await fetch(target.toString(), {
+      method: "GET",
+      redirect: "follow"
     });
 
-    // Google Apps Script commonly responds to /exec POSTs
-    // with a redirect. Re-send the POST body to the
-    // redirect target so Telegram callback updates are
-    // not converted into a GET request.
-    if (
-      response.status >= 300 &&
-      response.status < 400
-    ) {
-      const location = response.headers.get("location");
+    const text = await response.text();
 
-      if (!location) {
-        return res.status(502).json({
-          success: false,
-          error: "Google Apps Script returned a redirect without a Location header.",
-          upstreamStatus: response.status
-        });
-      }
-
-      response = await fetch(location, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body,
-        redirect: "follow"
-      });
-    }
-
-    const responseText = await response.text();
-
-    if (!responseText.trim()) {
+    if (!text.trim()) {
       return res.status(502).json({
         success: false,
         error: "Google Apps Script returned an empty response.",
@@ -77,14 +56,14 @@ export default async function handler(req, res) {
     }
 
     try {
-      const parsed = JSON.parse(responseText);
+      const parsed = JSON.parse(text);
       return res.status(200).json(parsed);
     } catch {
       return res.status(502).json({
         success: false,
         error: "Google Apps Script returned a non-JSON response.",
         upstreamStatus: response.status,
-        bodyPreview: responseText.slice(0, 500)
+        bodyPreview: text.slice(0, 500)
       });
     }
   } catch (error) {
