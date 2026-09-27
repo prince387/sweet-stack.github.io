@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>SWEET MART Admin Dashboard</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --surface:#ffffff;
+      --surface-2:#f8fafc;
+      --text:#152033;
+      --muted:#667085;
+      --border:#e5eaf0;
+      --blue:#0b5ed7;
+      --green:#198754;
+      --amber:#c47b00;
+      --red:#dc3545;
+      --purple:#6f42c1;
+      --shadow:0 8px 26px rgba(16,24,40,.07);
+      --radius:16px;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#0f141b;
+        --surface:#171d26;
+        --surface-2:#202733;
+        --text:#f2f4f7;
+        --muted:#98a2b3;
+        --border:#2c3542;
+        --blue:#4d8dff;
+        --green:#35b87c;
+        --amber:#e1a72e;
+        --red:#ff6874;
+        --purple:#9a72e5;
+        --shadow:none;
+      }
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+    body{min-height:100vh}
+    button{font:inherit}
+    .app{max-width:1120px;margin:0 auto;padding:16px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+    .brand-wrap{display:flex;align-items:center;gap:12px}
+    .brand-mark{width:44px;height:44px;border-radius:13px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:22px;font-weight:800}
+    .brand{font-size:22px;font-weight:800}
+    .subtitle{font-size:12px;color:var(--muted);margin-top:3px}
+    .top-actions{display:flex;align-items:center;gap:8px}
+    .top-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:10px 13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
+    .top-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+    .status-line{font-size:12px;color:var(--muted);min-height:18px;margin-bottom:12px}
+    .error-box{display:none;background:rgba(220,53,69,.1);border:1px solid rgba(220,53,69,.28);color:var(--red);padding:14px;border-radius:12px;margin-bottom:14px;font-size:13px;line-height:1.45}
+    .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);min-width:0}
+    .card-label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    .card-value{font-size:25px;font-weight:800;margin-top:8px;overflow-wrap:anywhere}
+    .card-sub{font-size:12px;color:var(--muted);margin-top:5px}
+    .card-blue{border-top:3px solid var(--blue)}
+    .card-green{border-top:3px solid var(--green)}
+    .card-amber{border-top:3px solid var(--amber)}
+    .card-red{border-top:3px solid var(--red)}
+    .grid-2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.9fr);gap:14px;margin-bottom:14px}
+    .section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+    .section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    .section-title{font-size:16px;font-weight:800}
+    .section-meta{font-size:12px;color:var(--muted)}
+    .section-body{padding:16px}
+    .chart{height:220px;display:flex;align-items:flex-end;gap:8px;padding:10px 2px 30px;position:relative}
+    .chart-line{position:absolute;left:0;right:0;top:10px;bottom:30px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+    .grid-line{border-top:1px dashed var(--border)}
+    .bars{height:100%;display:flex;align-items:flex-end;gap:7px;flex:1;position:relative;z-index:1}
+    .bar-col{height:100%;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px}
+    .bar{width:100%;max-width:32px;border-radius:7px 7px 2px 2px;background:var(--blue);min-height:3px}
+    .bar-label{font-size:10px;color:var(--muted);transform:rotate(-45deg);transform-origin:center;margin-top:10px;white-space:nowrap}
+    .donut-wrap{display:flex;align-items:center;justify-content:center;min-height:220px}
+    .donut{width:170px;height:170px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(var(--blue) 0deg 90deg,var(--green) 90deg 180deg,var(--amber) 180deg 270deg,var(--red) 270deg 360deg)}
+    .donut::after{content:"";position:absolute;inset:35px;border-radius:50%;background:var(--surface)}
+    .donut-center{position:relative;z-index:2;text-align:center}
+    .donut-value{font-size:22px;font-weight:800}
+    .donut-label{font-size:11px;color:var(--muted);margin-top:2px}
+    .legend{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:10px}
+    .legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+    .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+    .table-wrap{overflow:auto}
+    table{width:100%;border-collapse:collapse;min-width:720px}
+    th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:12px;vertical-align:top}
+    th{color:var(--muted);font-weight:800;background:var(--surface-2);position:sticky;top:0;z-index:1}
+    td strong{font-size:12px}
+    .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:800;white-space:nowrap}
+    .badge.green{background:rgba(25,135,84,.12);color:var(--green)}
+    .badge.amber{background:rgba(196,123,0,.12);color:var(--amber)}
+    .badge.red{background:rgba(220,53,69,.12);color:var(--red)}
+    .badge.blue{background:rgba(11,94,215,.12);color:var(--blue)}
+    .badge.purple{background:rgba(111,66,193,.12);color:var(--purple)}
+    .muted{color:var(--muted)}
+    .empty{padding:26px 10px;text-align:center;color:var(--muted);font-size:13px}
+    .two-col-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .list-item{padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
+    .list-title{font-size:13px;font-weight:800;line-height:1.35}
+    .list-small{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
+    .question{font-size:12px;line-height:1.45;margin-top:7px}
+    .loading{opacity:.65}
+    .footer-note{font-size:11px;color:var(--muted);text-align:center;padding:8px 0 16px}
+    @media(max-width:900px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-2{grid-template-columns:1fr}}
+    @media(max-width:520px){.app{padding:10px}.cards{grid-template-columns:1fr 1fr;gap:8px}.card{padding:13px}.card-value{font-size:21px}.topbar{align-items:flex-start}.top-actions{width:100%}.top-btn{flex:1}.two-col-list{grid-template-columns:1fr}.section-body{padding:12px}.chart{height:200px}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar">
+      <div class="brand-wrap">
+        <div class="brand-mark">S</div>
+        <div>
+          <div class="brand">SWEET MART</div>
+          <div class="subtitle">Admin Business Dashboard</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="refreshBtn" class="top-btn primary" type="button">↻ Refresh</button>
+        <button id="closeBtn" class="top-btn" type="button">← Bot</button>
+      </div>
+    </div>
+
+    <div id="statusLine" class="status-line">Connecting to your business data…</div>
+    <div id="errorBox" class="error-box"></div>
+
+    <section id="dashboardContent" class="loading">
+      <div class="cards">
+        <div class="card card-blue"><div class="card-label">Revenue</div><div id="totalRevenue" class="card-value">GH₵0.00</div><div class="card-sub" id="totalSales">0 sales</div></div>
+        <div class="card card-green"><div class="card-label">Profit</div><div id="totalProfit" class="card-value">GH₵0.00</div><div class="card-sub">From recorded sales</div></div>
+        <div class="card card-amber"><div class="card-label">Orders</div><div id="totalOrders" class="card-value">0</div><div class="card-sub" id="pendingOrders">0 pending</div></div>
+        <div class="card card-red"><div class="card-label">Customers</div><div id="totalCustomers" class="card-value">0</div><div class="card-sub" id="questionsCount">0 unanswered questions</div></div>
+      </div>
+
+      <div class="cards">
+        <div class="card"><div class="card-label">Products</div><div id="totalProducts" class="card-value">0</div><div class="card-sub" id="stockSummary">0 in stock</div></div>
+        <div class="card"><div class="card-label">Paid Orders</div><div id="paidOrders" class="card-value">0</div><div class="card-sub" id="unpaidOrders">0 unpaid</div></div>
+        <div class="card"><div class="card-label">Out For Delivery</div><div id="outForDelivery" class="card-value">0</div><div class="card-sub" id="deliveredOrders">0 delivered</div></div>
+        <div class="card"><div class="card-label">Active FAQs</div><div id="activeFaqs" class="card-value">0</div><div class="card-sub" id="notificationsCount">0 pending notifications</div></div>
+      </div>
+
+      <div class="grid-2">
+        <section class="section">
+          <div class="section-head"><div class="section-title">Revenue — last 14 days</div><div id="trendTotal" class="section-meta">GH₵0.00</div></div>
+          <div class="section-body"><div id="salesChart" class="chart"></div></div>
+        </section>
+        <section class="section">
+          <div class="section-head"><div class="section-title">Order status</div><div class="section-meta">Current distribution</div></div>
+          <div class="section-body"><div class="donut-wrap"><div id="orderDonut" class="donut"><div class="donut-center"><div id="orderDonutValue" class="donut-value">0</div><div class="donut-label">orders</div></div></div></div><div id="orderLegend" class="legend"></div></div>
+        </section>
+      </div>
+
+      <section class="section">
+        <div class="section-head"><div class="section-title">Recent Orders</div><div class="section-meta">Latest 12</div></div>
+        <div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Product</th><th>Amount</th><th>Status</th><th>Payment</th><th>Date</th><th>Delivery</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+      </section>
+
+      <div class="grid-2">
+        <section class="section">
+          <div class="section-head"><div class="section-title">Top Products</div><div class="section-meta">By revenue</div></div>
+          <div class="section-body"><div id="topProducts" class="two-col-list"></div></div>
+        </section>
+        <section class="section">
+          <div class="section-head"><div class="section-title">Stock Alerts</div><div class="section-meta">Out of stock</div></div>
+          <div class="section-body"><div id="stockAlerts" class="two-col-list"></div></div>
+        </section>
+      </div>
+
+      <section class="section">
+        <div class="section-head"><div class="section-title">Recent Sales</div><div class="section-meta">Latest 12</div></div>
+        <div class="table-wrap"><table><thead><tr><th>Sale</th><th>Order</th><th>Product</th><th>Revenue</th><th>Profit</th><th>Payment</th><th>Date</th></tr></thead><tbody id="salesBody"></tbody></table></div>
+      </section>
+
+      <div class="grid-2">
+        <section class="section">
+          <div class="section-head"><div class="section-title">Customer Questions</div><div class="section-meta">Latest questions</div></div>
+          <div class="section-body"><div id="questionsList"></div></div>
+        </section>
+        <section class="section">
+          <div class="section-head"><div class="section-title">Admin Activity</div><div class="section-meta">Latest actions</div></div>
+          <div class="section-body"><div id="activityList"></div></div>
+        </section>
+      </div>
+    </section>
+
+    <div id="footerNote" class="footer-note">Data is loaded from your SWEET MART Google Sheets backend.</div>
+  </main>
+
+<script>
+(function(){
+  "use strict";
+  let initialized = false;
+
+  function tg(){
+    try{
+      return window.Telegram && Telegram.WebApp ? Telegram.WebApp : null;
+    }catch(e){ return null; }
+  }
+
+  function setupTelegram(){
+    const app = tg();
+    if(!app) return;
+    try{ app.ready(); app.expand(); }catch(e){}
+  }
+
+  function money(n){
+    const value = Number(n || 0);
+    return "GH₵" + value.toLocaleString("en-GH", {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function number(n){
+    return Number(n || 0).toLocaleString("en-GH");
+  }
+
+  function escapeHtml(value){
+    return String(value == null ? "" : value)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+  }
+
+  function badge(status, type){
+    const raw = String(status || "").toUpperCase();
+    let cls = "blue";
+    if(type === "payment"){
+      if(raw === "PAID") cls = "green";
+      else if(raw === "UNPAID") cls = "red";
+      else if(raw === "PARTIALLY PAID") cls = "amber";
+      else if(raw === "REFUNDED") cls = "purple";
+    }else{
+      if(raw === "DELIVERED") cls = "green";
+      else if(raw === "CANCELLED") cls = "red";
+      else if(raw === "PENDING") cls = "amber";
+      else if(raw === "OUT FOR DELIVERY") cls = "purple";
+      else if(raw === "PROCESSING" || raw === "CONFIRMED") cls = "blue";
+    }
+    return '<span class="badge '+cls+'">'+escapeHtml(raw || "-")+'</span>';
+  }
+
+  function telegramAuthData(){
+    const app = tg();
+    return app ? String(app.initData || "") : "";
+  }
+
+  function showError(message){
+    const box = document.getElementById("errorBox");
+    box.style.display = "block";
+    box.textContent = message;
+  }
+
+  function clearError(){
+    const box = document.getElementById("errorBox");
+    box.style.display = "none";
+    box.textContent = "";
+  }
+
+  function renderTrend(rows){
+    const container = document.getElementById("salesChart");
+    container.innerHTML = "";
+    const values = (rows || []).map(x => Number(x.revenue || 0));
+    const max = Math.max(1, ...values);
+    const total = values.reduce((s,v)=>s+v,0);
+    document.getElementById("trendTotal").textContent = money(total);
+
+    const grid = document.createElement("div");
+    grid.className = "chart-line";
+    [0,1,2,3].forEach(()=>{ const g=document.createElement("div"); g.className="grid-line"; grid.appendChild(g); });
+    container.appendChild(grid);
+
+    const bars = document.createElement("div");
+    bars.className = "bars";
+    (rows || []).forEach(function(item){
+      const col=document.createElement("div"); col.className="bar-col";
+      const bar=document.createElement("div"); bar.className="bar";
+      bar.style.height=Math.max(3,(Number(item.revenue||0)/max)*100)+"%";
+      bar.title=(item.date||"")+" — "+money(item.revenue);
+      const label=document.createElement("div"); label.className="bar-label";
+      label.textContent=String(item.date||"").slice(5);
+      col.appendChild(bar); col.appendChild(label); bars.appendChild(col);
+    });
+    container.appendChild(bars);
+  }
+
+  function renderOrderStatus(summary){
+    const parts=[
+      ["Pending",Number(summary.pendingOrders||0),"var(--amber)"],
+      ["Confirmed",Number(summary.confirmedOrders||0),"var(--blue)"],
+      ["Processing",Number(summary.processingOrders||0),"var(--purple)"],
+      ["Out for delivery",Number(summary.outForDeliveryOrders||0),"var(--purple)"],
+      ["Delivered",Number(summary.deliveredOrders||0),"var(--green)"],
+      ["Cancelled",Number(summary.cancelledOrders||0),"var(--red)"]
+    ];
+    const total=parts.reduce((s,p)=>s+p[1],0);
+    const gradientParts=[]; let angle=0;
+    parts.forEach(function(p){
+      if(total<=0) return;
+      const next=angle+(p[1]/total)*360;
+      gradientParts.push(p[2]+" "+angle+"deg "+next+"deg");
+      angle=next;
+    });
+    const donut=document.getElementById("orderDonut");
+    donut.style.background = total ? "conic-gradient("+gradientParts.join(",")+")" : "var(--border)";
+    document.getElementById("orderDonutValue").textContent=number(total);
+    const legend=document.getElementById("orderLegend"); legend.innerHTML="";
+    parts.forEach(function(p){
+      const item=document.createElement("div"); item.className="legend-item";
+      item.innerHTML='<span class="dot" style="background:'+p[2]+'"></span>'+escapeHtml(p[0])+': '+number(p[1]);
+      legend.appendChild(item);
+    });
+  }
+
+  function renderOrders(items){
+    const body=document.getElementById("ordersBody"); body.innerHTML="";
+    if(!items || !items.length){ body.innerHTML='<tr><td colspan="8" class="empty">No orders yet.</td></tr>'; return; }
+    items.forEach(function(o){
+      const tr=document.createElement("tr");
+      tr.innerHTML=
+        '<td><strong>'+escapeHtml(o.orderId)+'</strong></td>'+
+        '<td>'+escapeHtml(o.customerId || "-")+'</td>'+
+        '<td>'+escapeHtml(o.productName || "-")+'<div class="muted">Qty: '+number(o.quantity)+'</div></td>'+
+        '<td><strong>'+money(o.totalAmount)+'</strong></td>'+
+        '<td>'+badge(o.orderStatus)+ '</td>'+
+        '<td>'+badge(o.paymentStatus,"payment")+'</td>'+
+        '<td>'+escapeHtml(o.orderDate || "-")+'</td>'+
+        '<td>'+escapeHtml(o.deliveryLocation || "-")+'</td>';
+      body.appendChild(tr);
+    });
+  }
+
+  function renderSales(items){
+    const body=document.getElementById("salesBody"); body.innerHTML="";
+    if(!items || !items.length){ body.innerHTML='<tr><td colspan="7" class="empty">No recorded sales yet.</td></tr>'; return; }
+    items.forEach(function(s){
+      const tr=document.createElement("tr");
+      tr.innerHTML=
+        '<td><strong>'+escapeHtml(s.saleId)+'</strong></td>'+
+        '<td>'+escapeHtml(s.orderId || "-")+'</td>'+
+        '<td>'+escapeHtml(s.productName || "-")+'</td>'+
+        '<td><strong>'+money(s.revenue)+'</strong></td>'+
+        '<td>'+money(s.profit)+'</td>'+
+        '<td>'+escapeHtml(s.paymentMethod || "-")+'</td>'+
+        '<td>'+escapeHtml(s.saleDate || "-")+'</td>';
+      body.appendChild(tr);
+    });
+  }
+
+  function renderList(containerId, items, renderer, emptyText){
+    const node=document.getElementById(containerId); node.innerHTML="";
+    if(!items || !items.length){ node.innerHTML='<div class="empty">'+escapeHtml(emptyText)+'</div>'; return; }
+    items.forEach(function(item){ node.insertAdjacentHTML("beforeend",renderer(item)); });
+  }
+
+  function renderData(data){
+    const s=data.summary || {};
+    document.getElementById("totalRevenue").textContent=money(s.totalRevenue);
+    document.getElementById("totalSales").textContent=number(s.totalSales)+" sales";
+    document.getElementById("totalProfit").textContent=money(s.totalProfit);
+    document.getElementById("totalOrders").textContent=number(s.totalOrders);
+    document.getElementById("pendingOrders").textContent=number(s.pendingOrders)+" pending";
+    document.getElementById("totalCustomers").textContent=number(s.totalCustomers);
+    document.getElementById("questionsCount").textContent=number(s.unansweredQuestions)+" unanswered questions";
+    document.getElementById("totalProducts").textContent=number(s.totalProducts);
+    document.getElementById("stockSummary").textContent=number(s.inStockProducts)+" in stock · "+number(s.outOfStockProducts)+" out";
+    document.getElementById("paidOrders").textContent=number(s.paidOrders);
+    document.getElementById("unpaidOrders").textContent=number(s.unpaidOrders)+" unpaid";
+    document.getElementById("outForDelivery").textContent=number(s.outForDeliveryOrders);
+    document.getElementById("deliveredOrders").textContent=number(s.deliveredOrders)+" delivered";
+    document.getElementById("activeFaqs").textContent=number(s.activeFaqs);
+    document.getElementById("notificationsCount").textContent=number(s.pendingNotifications)+" pending notifications";
+
+    renderTrend(data.salesTrend || []);
+    renderOrderStatus(s);
+    renderOrders(data.recentOrders || []);
+    renderSales(data.recentSales || []);
+
+    renderList("topProducts", data.topProducts || [], function(p){
+      return '<div class="list-item"><div class="list-title">'+escapeHtml(p.productName||"-")+'</div><div class="list-small">'+number(p.quantity)+' units · '+money(p.revenue)+' revenue</div><div class="list-small">Profit: '+money(p.profit)+'</div></div>';
+    }, "No sales data yet.");
+
+    renderList("stockAlerts", data.stockAlerts || [], function(p){
+      return '<div class="list-item"><div class="list-title">'+escapeHtml(p.productName||"-")+'</div><div class="list-small">'+escapeHtml(p.category||"-")+'</div><div style="margin-top:7px">'+badge("OUT OF STOCK")+'</div></div>';
+    }, "No out-of-stock products.");
+
+    renderList("questionsList", data.recentQuestions || [], function(q){
+      return '<div class="list-item"><div class="list-title">'+escapeHtml(q.productName || q.customerName || "Customer question")+'</div><div class="list-small">'+escapeHtml(q.date||"")+' · '+badge(q.status)+'</div><div class="question">'+escapeHtml(q.question||"")+'</div></div>';
+    }, "No customer questions.");
+
+    renderList("activityList", data.recentActivity || [], function(a){
+      return '<div class="list-item"><div class="list-title">'+escapeHtml(a.action||"Activity")+'</div><div class="list-small">'+escapeHtml(a.date||"")+' · '+escapeHtml(a.user||"System")+'</div><div class="question">'+escapeHtml(a.details||"")+'</div></div>';
+    }, "No admin activity yet.");
+
+    document.getElementById("footerNote").textContent="Last updated: "+String(data.generatedAt || "-");
+  }
+
+  async function loadDashboard(){
+    clearError();
+    const status=document.getElementById("statusLine");
+    status.textContent="Loading business data…";
+    const auth=telegramAuthData();
+    if(!auth){
+      showError("This dashboard must be opened from the SWEET MART Admin Bot using the Open Admin Dashboard button.");
+      status.textContent="Waiting for Telegram authentication.";
+      return;
+    }
+    try{
+      const response=await fetch("/api?action=admin_dashboard",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({initData:auth})
+      });
+      const result=await response.json();
+      if(!response.ok || !result.success){ throw new Error(result.error || "Dashboard data could not be loaded."); }
+      renderData(result.data || {});
+      status.textContent="Business data loaded successfully.";
+      document.getElementById("dashboardContent").classList.remove("loading");
+    }catch(error){
+      console.error(error);
+      status.textContent="Unable to load dashboard.";
+      showError(error && error.message ? error.message : "Unable to load dashboard data.");
+    }
+  }
+
+  function closeToBot(){
+    const app=tg();
+    if(app){ try{ app.close(); return; }catch(e){} }
+    try{ window.history.back(); }catch(e){ window.location.href="/"; }
+  }
+
+  document.getElementById("refreshBtn").addEventListener("click", loadDashboard);
+  document.getElementById("closeBtn").addEventListener("click", closeToBot);
+  setupTelegram();
+  if(!initialized){ initialized=true; loadDashboard(); }
+})();
+</script>
+</body>
+</html>
