@@ -432,11 +432,32 @@
           orderNotes:orderNotes,
           cart:cart,
           telegramInitData: (window.Telegram && Telegram.WebApp)
-            ? Telegram.WebApp.initData
+            ? String(Telegram.WebApp.initData || "")
             : "",
-          telegramUserId: (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user)
-            ? String(Telegram.WebApp.initDataUnsafe.user.id || "")
-            : ""
+          telegramUserId: (function() {
+            try {
+              if (window.Telegram && Telegram.WebApp) {
+                const unsafe = Telegram.WebApp.initDataUnsafe || {};
+                if (unsafe.user && unsafe.user.id) {
+                  return String(unsafe.user.id);
+                }
+                if (unsafe.receiver && unsafe.receiver.id) {
+                  return String(unsafe.receiver.id);
+                }
+                const raw = String(Telegram.WebApp.initData || "");
+                const match = raw.match(/(?:^|&)user=([^&]+)/);
+                if (match) {
+                  const parsed = JSON.parse(decodeURIComponent(match[1]));
+                  if (parsed && parsed.id) {
+                    return String(parsed.id);
+                  }
+                }
+              }
+            } catch (e) {
+              console.log("Telegram user ID extraction failed.", e);
+            }
+            return "";
+          })()
         })
       });
 
