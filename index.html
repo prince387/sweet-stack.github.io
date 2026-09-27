@@ -43,6 +43,7 @@
     .page-header{display:flex;align-items:center;gap:12px;padding:15px 16px;background:#fff;color:#111827;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:20}
     .page-back{flex-shrink:0;border:none;background:#f1f3f5;color:#111827;border-radius:9px;padding:9px 12px;font-size:14px;font-weight:bold;cursor:pointer}
     .page-title{font-size:18px;font-weight:bold}
+    .page-exit{margin-left:auto;flex-shrink:0;border:1px solid #d5d9e2;background:#fff;color:#111827;border-radius:9px;padding:9px 10px;font-size:12px;font-weight:bold;cursor:pointer}
     .cart-content{padding:16px;padding-bottom:170px}
     .cart-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #e5e7eb}
     .cart-item-image{width:78px;height:78px;object-fit:contain;border-radius:10px;background:#f8f9fb;flex-shrink:0}
@@ -128,6 +129,7 @@
     <div class="page-header">
       <button id="closeCart" class="page-back" type="button">← Shop</button>
       <div class="page-title">Your Cart</div>
+      <button id="closeCartToBot" class="page-exit" type="button">← Bot</button>
     </div>
     <div class="cart-content"><div id="cartItems" class="cart-items"></div></div>
     <div class="cart-footer">
@@ -140,6 +142,7 @@
     <div class="page-header">
       <button id="closeCheckout" class="page-back" type="button">← Cart</button>
       <div class="page-title">Checkout</div>
+      <button id="closeCheckoutToBot" class="page-exit" type="button">← Bot</button>
     </div>
     <div class="checkout-content">
       <div class="form-group">
@@ -163,7 +166,10 @@
   </section>
 
   <section id="successPage" class="page">
-    <div class="page-header"><div class="page-title">Order Confirmed</div></div>
+    <div class="page-header">
+      <div class="page-title">Order Confirmed</div>
+      <button id="closeSuccessToBot" class="page-exit" type="button">← Bot</button>
+    </div>
     <div class="success-content">
       <div class="success-icon">✅</div>
       <h2 class="success-title">Thank You!</h2>
