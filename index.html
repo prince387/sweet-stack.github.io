@@ -430,7 +430,13 @@
           customerPhone:customerPhone,
           deliveryAddress:deliveryAddress,
           orderNotes:orderNotes,
-          cart:cart
+          cart:cart,
+          telegramInitData: (window.Telegram && Telegram.WebApp)
+            ? Telegram.WebApp.initData
+            : "",
+          telegramUserId: (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user)
+            ? String(Telegram.WebApp.initDataUnsafe.user.id || "")
+            : ""
         })
       });
 
