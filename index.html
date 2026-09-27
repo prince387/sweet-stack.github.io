@@ -215,6 +215,7 @@
   let cart = [];
   let currentPage = "shopPage";
   let questionProduct = null;
+  let productOrderLaunchHandled = false;
 
   function tgReady() {
     try {
@@ -283,6 +284,7 @@
       if (!result.success) throw new Error(result.error || "Unable to load products.");
       allProducts = Array.isArray(result.data) ? result.data : [];
       displayProducts(allProducts);
+      openProductFromQuery();
       updateCartCount();
     } catch (error) {
       console.error("Product loading error:", error);
@@ -376,6 +378,66 @@
       console.log("Telegram profile extraction failed.", e);
     }
     return {firstName:"",lastName:"",username:""};
+  }
+
+  function openProductFromQuery() {
+    if (productOrderLaunchHandled) return;
+
+    let params;
+    try {
+      params = new URLSearchParams(window.location.search);
+    } catch (e) {
+      return;
+    }
+
+    const productId = String(params.get("productId") || "").trim();
+    if (!productId || !Array.isArray(allProducts) || allProducts.length === 0) return;
+
+    const product = allProducts.find(function(item) {
+      return String(item.productId || "").trim() === productId;
+    });
+
+    productOrderLaunchHandled = true;
+
+    if (!product) {
+      return;
+    }
+
+    const stockStatus = String(product.stockStatus || "").toUpperCase();
+    if (stockStatus.includes("OUT")) {
+      alert("Sorry, this product is currently out of stock.");
+      return;
+    }
+
+    const existing = cart.find(function(item) {
+      return String(item.product.productId || "").trim() === productId;
+    });
+
+    if (existing) {
+      existing.quantity = Number(existing.quantity || 0) + 1;
+    } else {
+      cart.push({
+        product: product,
+        quantity: 1
+      });
+    }
+
+    renderCart();
+    updateCartCount();
+
+    /*
+     * The product was launched from a Telegram
+     * "Place an Order" button, so take the customer
+     * directly to the cart where they can continue
+     * to checkout.
+     */
+    history.replaceState(
+      {pageId:"cartPage"},
+      "",
+      "#cartPage"
+    );
+
+    setPage("cartPage");
   }
 
   function openQuestionForm(product) {
