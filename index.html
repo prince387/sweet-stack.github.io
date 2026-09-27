@@ -231,6 +231,7 @@
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
         if (Telegram.WebApp.BackButton) {
+          try { Telegram.WebApp.BackButton.offClick(goBack); } catch (e) {}
           Telegram.WebApp.BackButton.onClick(goBack);
         }
       }
@@ -240,13 +241,39 @@
   }
 
   function closeMiniAppToBot() {
+    let telegramApp = null;
+
     try {
       if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.close();
-        return;
+        telegramApp = Telegram.WebApp;
       }
     } catch (e) {
-      console.log("Telegram close unavailable.", e);
+      telegramApp = null;
+    }
+
+    if (telegramApp) {
+      try {
+        telegramApp.close();
+      } catch (e) {
+        console.log("Telegram close unavailable.", e);
+      }
+
+      // Telegram.close() is the real exit on supported Telegram clients.
+      // Keep a browser fallback for previews and clients where close is unavailable.
+      setTimeout(function() {
+        try {
+          if (window.history.length > 1) {
+            window.history.back();
+            return;
+          }
+        } catch (e) {}
+
+        try {
+          window.location.href = "/";
+        } catch (e) {}
+      }, 350);
+
+      return;
     }
 
     try {
@@ -289,13 +316,25 @@
   }
 
   function goBack() {
-    if (currentPage !== "shopPage") {
-      history.back();
+    if (currentPage === "cartPage") {
+      history.replaceState({pageId:"shopPage"}, "", "#shopPage");
+      setPage("shopPage");
       return;
     }
-    try {
-      if (window.Telegram && Telegram.WebApp) Telegram.WebApp.close();
-    } catch (e) {}
+
+    if (currentPage === "checkoutPage") {
+      history.replaceState({pageId:"cartPage"}, "", "#cartPage");
+      setPage("cartPage");
+      return;
+    }
+
+    if (currentPage === "successPage") {
+      history.replaceState({pageId:"shopPage"}, "", "#shopPage");
+      setPage("shopPage");
+      return;
+    }
+
+    closeMiniAppToBot();
   }
 
   window.addEventListener("popstate", function(event) {
@@ -584,13 +623,19 @@
   }
 
   document.getElementById("backToBotButton").addEventListener("click", closeMiniAppToBot);
+  document.getElementById("closeCartToBot").addEventListener("click", closeMiniAppToBot);
+  document.getElementById("closeCheckoutToBot").addEventListener("click", closeMiniAppToBot);
+  document.getElementById("closeSuccessToBot").addEventListener("click", closeMiniAppToBot);
 
   document.getElementById("cartButton").addEventListener("click", function() {
     renderCart();
     showPage("cartPage");
   });
 
-  document.getElementById("closeCart").addEventListener("click", goBack);
+  document.getElementById("closeCart").addEventListener("click", function() {
+    history.replaceState({pageId:"shopPage"}, "", "#shopPage");
+    setPage("shopPage");
+  });
 
   function renderCart() {
     const container = document.getElementById("cartItems");
@@ -672,7 +717,10 @@
     showPage("checkoutPage");
   });
 
-  document.getElementById("closeCheckout").addEventListener("click", goBack);
+  document.getElementById("closeCheckout").addEventListener("click", function() {
+    history.replaceState({pageId:"cartPage"}, "", "#cartPage");
+    setPage("cartPage");
+  });
 
   document.getElementById("placeOrderButton").addEventListener("click", async function() {
     const button = this;
