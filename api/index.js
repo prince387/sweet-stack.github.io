@@ -48,22 +48,36 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
+      const requestAction =
+        String((req.query && req.query.action) || "order").trim();
+
       const target = new URL(gasUrl);
-      target.searchParams.set("action", "order");
+      target.searchParams.set("action", requestAction);
       target.searchParams.set("key", secret);
 
-      let orderData;
+      let requestData;
 
       if (typeof req.body === "string") {
-        orderData = JSON.parse(req.body || "{}");
+        requestData = JSON.parse(req.body || "{}");
       } else {
-        orderData = req.body || {};
+        requestData = req.body || {};
       }
 
-      const body = JSON.stringify({
-        action: "order",
-        orderData: orderData
-      });
+      const body =
+        requestAction === "order"
+          ? JSON.stringify({
+              action: "order",
+              orderData: requestData
+            })
+          : requestAction === "ask_product"
+            ? JSON.stringify({
+                action: "ask_product",
+                questionData: requestData
+              })
+            : JSON.stringify({
+                action: requestAction,
+                data: requestData
+              });
 
       const response = await fetch(target.toString(), {
         method: "POST",
