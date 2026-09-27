@@ -77,6 +77,23 @@
     .status-pending{color:#d97706;font-weight:bold}
     .status-unpaid{color:#dc3545;font-weight:bold}
     .continue-button{width:100%;border:none;background:#0b5ed7;color:#fff;padding:14px;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer}
+    .ask-button{width:100%;margin-top:8px;border:1px solid #0b5ed7;background:#fff;color:#0b5ed7;padding:10px;border-radius:9px;font-size:13px;font-weight:bold;cursor:pointer}
+    .question-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;padding:20px;align-items:center;justify-content:center}
+    .question-overlay.active{display:flex}
+    .question-card{width:100%;max-width:520px;background:#fff;border-radius:16px;padding:18px;box-shadow:0 10px 35px rgba(0,0,0,.2)}
+    .question-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .question-title{font-size:18px;font-weight:bold;color:#111827}
+    .question-close{border:none;background:#f1f3f5;color:#111827;border-radius:8px;width:36px;height:36px;font-size:20px;cursor:pointer}
+    .question-product{display:flex;gap:12px;align-items:center;margin:14px 0;padding:10px;background:#f8f9fb;border-radius:12px}
+    .question-product-image{width:64px;height:64px;object-fit:contain;background:#fff;border-radius:9px;flex-shrink:0}
+    .question-product-name{font-size:14px;font-weight:600;color:#111827;line-height:1.35}
+    .question-product-price{margin-top:4px;font-size:14px;color:#0b5ed7;font-weight:bold}
+    .question-help{font-size:13px;color:#6b7280;line-height:1.45;margin-bottom:10px}
+    .question-input{width:100%;min-height:110px;resize:vertical;border:1px solid #d5d9e2;border-radius:10px;padding:12px;font-size:14px;outline:none;color:#111827}
+    .question-input:focus{border-color:#0b5ed7}
+    .question-send{width:100%;margin-top:10px;border:none;background:#0b5ed7;color:#fff;padding:13px;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer}
+    .question-send:disabled{opacity:.7;cursor:not-allowed}
+    .question-status{margin-top:10px;font-size:13px;line-height:1.4;color:#198754;min-height:18px}
     @media (max-width:380px){.products{grid-template-columns:1fr}.product-image{height:200px}}
   </style>
 </head>
@@ -172,11 +189,32 @@
   </section>
 </div>
 
+<div id="questionOverlay" class="question-overlay" role="dialog" aria-modal="true" aria-labelledby="questionTitle">
+  <div class="question-card">
+    <div class="question-head">
+      <div id="questionTitle" class="question-title">Ask about this product</div>
+      <button id="closeQuestionButton" class="question-close" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="question-product">
+      <img id="questionProductImage" class="question-product-image" src="" alt="Product">
+      <div>
+        <div id="questionProductName" class="question-product-name"></div>
+        <div id="questionProductPrice" class="question-product-price"></div>
+      </div>
+    </div>
+    <div class="question-help">Send your question and our SWEET MART team will receive it directly.</div>
+    <textarea id="questionInput" class="question-input" placeholder="e.g. Is this product available in another colour?"></textarea>
+    <button id="sendQuestionButton" class="question-send" type="button">Send Question</button>
+    <div id="questionStatus" class="question-status" aria-live="polite"></div>
+  </div>
+</div>
+
 <script>
   let allProducts = [];
   let selectedCategory = "All";
   let cart = [];
   let currentPage = "shopPage";
+  let questionProduct = null;
 
   function tgReady() {
     try {
@@ -287,15 +325,151 @@
       button.textContent = out ? "Out of Stock" : "Add to Cart";
       button.disabled = out;
       if (!out) button.addEventListener("click", function(){ addToCart(product); });
+
+      const askButton = document.createElement("button");
+      askButton.className = "ask-button";
+      askButton.type = "button";
+      askButton.textContent = "💬 Ask about this product";
+      askButton.addEventListener("click", function(){ openQuestionForm(product); });
       info.appendChild(name);
       info.appendChild(price);
       info.appendChild(stock);
       info.appendChild(button);
+      info.appendChild(askButton);
       card.appendChild(image);
       card.appendChild(info);
       container.appendChild(card);
     });
   }
+
+  function getTelegramUserId() {
+    try {
+      if (window.Telegram && Telegram.WebApp) {
+        const unsafe = Telegram.WebApp.initDataUnsafe || {};
+        if (unsafe.user && unsafe.user.id) return String(unsafe.user.id);
+        if (unsafe.receiver && unsafe.receiver.id) return String(unsafe.receiver.id);
+        const raw = String(Telegram.WebApp.initData || "");
+        const match = raw.match(/(?:^|&)user=([^&]+)/);
+        if (match) {
+          const parsed = JSON.parse(decodeURIComponent(match[1]));
+          if (parsed && parsed.id) return String(parsed.id);
+        }
+      }
+    } catch (e) {
+      console.log("Telegram user ID extraction failed.", e);
+    }
+    return "";
+  }
+
+  function getTelegramUserProfile() {
+    try {
+      if (window.Telegram && Telegram.WebApp) {
+        const unsafe = Telegram.WebApp.initDataUnsafe || {};
+        const user = unsafe.user || {};
+        return {
+          firstName: String(user.first_name || ""),
+          lastName: String(user.last_name || ""),
+          username: String(user.username || "")
+        };
+      }
+    } catch (e) {
+      console.log("Telegram profile extraction failed.", e);
+    }
+    return {firstName:"",lastName:"",username:""};
+  }
+
+  function openQuestionForm(product) {
+    questionProduct = product;
+    document.getElementById("questionProductImage").src = product.imageUrl || "";
+    document.getElementById("questionProductImage").alt = product.productName || "Product";
+    document.getElementById("questionProductName").textContent = product.productName || "";
+    document.getElementById("questionProductPrice").textContent =
+      "GH₵" + Number(product.sellingPrice || 0).toFixed(2);
+    document.getElementById("questionInput").value = "";
+    document.getElementById("questionStatus").textContent = "";
+    document.getElementById("sendQuestionButton").disabled = false;
+    document.getElementById("sendQuestionButton").textContent = "Send Question";
+    document.getElementById("questionOverlay").classList.add("active");
+    setTimeout(function(){ document.getElementById("questionInput").focus(); }, 50);
+  }
+
+  function closeQuestionForm() {
+    document.getElementById("questionOverlay").classList.remove("active");
+    questionProduct = null;
+  }
+
+  async function submitProductQuestion() {
+    const question = document.getElementById("questionInput").value.trim();
+    const button = document.getElementById("sendQuestionButton");
+    const status = document.getElementById("questionStatus");
+
+    if (!questionProduct) {
+      status.textContent = "Please select a product first.";
+      return;
+    }
+
+    if (!question) {
+      status.textContent = "Please enter your question.";
+      return;
+    }
+
+    const telegramUserId = getTelegramUserId();
+    if (!telegramUserId) {
+      status.textContent = "Please open SWEET MART from Telegram and try again.";
+      return;
+    }
+
+    const profile = getTelegramUserProfile();
+
+    button.disabled = true;
+    button.textContent = "Sending...";
+    status.textContent = "";
+
+    try {
+      const response = await fetch("/api?action=ask_product", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          productId:String(questionProduct.productId || ""),
+          productName:String(questionProduct.productName || ""),
+          productPrice:Number(questionProduct.sellingPrice || 0),
+          imageUrl:String(questionProduct.imageUrl || ""),
+          question:question,
+          telegramUserId:telegramUserId,
+          telegramFirstName:profile.firstName,
+          telegramLastName:profile.lastName,
+          telegramUsername:profile.username
+        })
+      });
+
+      if (!response.ok) throw new Error("HTTP " + response.status);
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Unable to send your question.");
+      }
+
+      status.textContent = "✅ Your question has been sent to SWEET MART.";
+      button.textContent = "Sent";
+
+      setTimeout(function(){
+        closeQuestionForm();
+      }, 1200);
+
+    } catch (error) {
+      console.error("Product question error:", error);
+      status.textContent = "Unable to send your question. Please try again.";
+      button.disabled = false;
+      button.textContent = "Send Question";
+    }
+  }
+
+  document.getElementById("closeQuestionButton").addEventListener("click", closeQuestionForm);
+  document.getElementById("sendQuestionButton").addEventListener("click", submitProductQuestion);
+  document.getElementById("questionOverlay").addEventListener("click", function(event) {
+    if (event.target === this) closeQuestionForm();
+  });
 
   function addToCart(product) {
     const productId = String(product.productId || "").trim();
@@ -434,30 +608,7 @@
           telegramInitData: (window.Telegram && Telegram.WebApp)
             ? String(Telegram.WebApp.initData || "")
             : "",
-          telegramUserId: (function() {
-            try {
-              if (window.Telegram && Telegram.WebApp) {
-                const unsafe = Telegram.WebApp.initDataUnsafe || {};
-                if (unsafe.user && unsafe.user.id) {
-                  return String(unsafe.user.id);
-                }
-                if (unsafe.receiver && unsafe.receiver.id) {
-                  return String(unsafe.receiver.id);
-                }
-                const raw = String(Telegram.WebApp.initData || "");
-                const match = raw.match(/(?:^|&)user=([^&]+)/);
-                if (match) {
-                  const parsed = JSON.parse(decodeURIComponent(match[1]));
-                  if (parsed && parsed.id) {
-                    return String(parsed.id);
-                  }
-                }
-              }
-            } catch (e) {
-              console.log("Telegram user ID extraction failed.", e);
-            }
-            return "";
-          })()
+          telegramUserId: getTelegramUserId()
         })
       });
 
