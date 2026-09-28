@@ -147,6 +147,7 @@ async function api(action,data={},options={}){
   try{return await request}finally{delete apiInflight[key]}
 }
 
+window.__smOriginalApiForV2=api;
 function showApp(){document.getElementById("authScreen").classList.add("hidden");document.getElementById("app").classList.remove("hidden")}function showLogin(message){document.getElementById("authScreen").classList.remove("hidden");document.getElementById("app").classList.add("hidden");if(message)loginError(message);document.getElementById("loginUsername").focus()}async function loginDirect(username,password){
   clearLoginError();
   const btn=document.getElementById("loginSubmit");
