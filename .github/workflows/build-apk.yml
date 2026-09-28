@@ -58,8 +58,8 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         working-directory: android
         run: |
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | awk '!/BEGIN CERTIFICATE|END CERTIFICATE/{printf "%s",$0}' | base64 --decode > sweet-mart-release.keystore
-          test -s sweet-mart-release.keystore
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | awk '!/BEGIN CERTIFICATE|END CERTIFICATE/{printf "%s",$0}' | base64 --decode > app/sweet-mart-release.keystore
+          test -s app/sweet-mart-release.keystore
 
           python3 - <<'PY'
           from pathlib import Path
@@ -68,8 +68,6 @@ jobs:
           p = Path("app/build.gradle")
           s = p.read_text()
 
-          # Capacitor's generated project may omit compileSdk from app/build.gradle.
-          # Add an explicit API level so modern Android Gradle Plugin versions can configure :app.
           if not re.search(r'(?m)^\s*compileSdk(?:Version)?\s+', s):
               s = s.replace(
                   "android {",
