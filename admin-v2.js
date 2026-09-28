@@ -275,7 +275,7 @@
     }catch(e){}
   }
 
-  window.SweetMartV2RefreshNav=addNavButton;
+  window.SweetMartV2RefreshNav=function(){addNavButton();addExecutiveNavButton();};
   window.SweetMartV2RefreshDashboard=function(){
     addDashboardHealth();
     renderDashboardHealth();
