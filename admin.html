@@ -50,8 +50,10 @@ html[data-sm-dark="0"]{--bg:#f4f7fb;--surface:#fff;--surface2:#f8fafc;--text:#17
 .offline-banner{display:none!important;margin-bottom:10px;padding:9px 11px;border-radius:10px;background:rgba(196,123,0,.12);color:var(--amber);border:1px solid rgba(196,123,0,.28);font-size:11px;font-weight:800}
 .offline-banner.show{display:block!important}
 @media(max-width:1000px){
-  .sidebar{width:248px!important;left:-248px;box-shadow:8px 0 28px rgba(0,0,0,.18)}
-  .sidebar.open{left:0}
+  .sidebar{width:248px!important;left:-248px;right:auto;display:block!important;visibility:visible!important;opacity:1!important;box-shadow:8px 0 28px rgba(0,0,0,.18);transition:left .18s ease;pointer-events:none}
+  .sidebar.open{left:0;pointer-events:auto}
+  .sidebar.open .nav button{font-size:13px!important;text-align:left!important;padding:11px 12px!important}
+  .sidebar.open .nav button .nav-label{display:inline!important}
   .main,#app.sidebar-collapsed .main{margin-left:0}
   .sidebar-overlay.open{display:block}
   .mobile-nav{display:none!important}
