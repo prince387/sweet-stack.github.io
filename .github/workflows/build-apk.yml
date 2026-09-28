@@ -33,6 +33,18 @@ jobs:
           rsync -a --exclude=www --exclude=.git --exclude=android --exclude=node_modules ./ www/
           cp admin.html www/index.html
 
+      - name: Validate JavaScript before Android build
+        run: |
+          node --check admin-v2.js
+          node - <<'NODE'
+          const fs = require("fs");
+          const html = fs.readFileSync("admin.html", "utf8");
+          const match = html.match(/<script>\\s*([\\s\\S]*?)\\s*<\\/script>\\s*<\\/body>/i);
+          if (!match) throw new Error("Could not locate the main admin script.");
+          new Function(match[1]);
+          console.log("admin.html inline JavaScript syntax: OK");
+          NODE
+
       - name: Install Capacitor
         run: npm install
 
