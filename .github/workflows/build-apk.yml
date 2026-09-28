@@ -39,6 +39,14 @@ jobs:
       - name: Create Android project
         run: npx cap add android
 
+      - name: Prepare branded Android icon
+        run: |
+          mkdir -p assets
+          cp sweet-mart-admin-icon-512.png assets/logo.png
+
+      - name: Generate Android launcher icon from SWEET MART logo
+        run: npx @capacitor/assets generate --android --iconBackgroundColor "#ffffff" --iconBackgroundColorDark "#111111"
+
       - name: Sync web app into Android
         run: npx cap sync android
 
