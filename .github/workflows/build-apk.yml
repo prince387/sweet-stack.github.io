@@ -1,4 +1,4 @@
-name: Build SWEET MART Admin APK
+name: Build SWEET MART Admin Android Release
 
 on:
   push:
@@ -50,13 +50,64 @@ jobs:
       - name: Sync web app into Android
         run: npx cap sync android
 
-      - name: Build debug APK
-        working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Restore production signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | awk '!/BEGIN CERTIFICATE|END CERTIFICATE/{printf "%s",$0}' | base64 --decode > android/sweet-mart-release.keystore
+          test -s android/sweet-mart-release.keystore
 
-      - name: Upload APK
+      - name: Configure Android release signing
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        working-directory: android
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/build.gradle")
+          s = p.read_text()
+          signing = '''
+              signingConfigs {
+                  release {
+                      storeFile file("sweet-mart-release.keystore")
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }
+          '''
+          if "signingConfigs {" not in s:
+              s = s.replace("android {", "android {\n" + signing, 1)
+          s = s.replace(
+              "release {",
+              "release {\n            signingConfig signingConfigs.release",
+              1
+          )
+          p.write_text(s)
+          PY
+          grep -n "signingConfigs\|signingConfig signingConfigs.release" app/build.gradle
+
+      - name: Build signed release APK and AAB
+        working-directory: android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease bundleRelease --no-daemon
+
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: sweet-mart-admin-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: sweet-mart-admin-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+      - name: Upload signed AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: sweet-mart-admin-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
