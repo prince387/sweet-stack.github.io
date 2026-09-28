@@ -179,6 +179,69 @@
     el.innerHTML='<div class="stat-row"><div class="item"><div class="item-title">'+(navigator.onLine?"🟢 Online":"🟠 Offline")+'</div><div class="item-sub">Connection state</div></div><div class="item"><div class="item-title">'+q+' pending</div><div class="item-sub">Offline operations</div></div><div class="item"><div class="item-title">'+(last?esc2(new Date(last).toLocaleTimeString()):"—")+'</div><div class="item-sub">Last V2 sync</div></div><div class="item"><div class="item-title">Protected</div><div class="item-sub">30-minute inactivity lock</div></div></div>';
   }
 
+  async function openExecutiveCenter(){
+    var old=document.getElementById("smExecutiveCenter");
+    if(old)old.remove();
+    var wrap=document.createElement("div");
+    wrap.id="smExecutiveCenter";
+    wrap.className="modal open";
+    wrap.innerHTML='<div class="modal-card v2-center-card"><div class="modal-head"><div><div class="modal-title">📊 SWEET MART Executive Center</div><div class="small-muted">Business intelligence, operations and data tools</div></div><button class="close" id="execClose">×</button></div><div class="modal-body"><div id="execLoading" class="empty">Loading live business intelligence…</div><div id="execBody" style="display:none"><div id="execSummary" class="report-grid"></div><div class="grid2" style="margin-top:12px"><section class="panel"><div class="panel-head"><div class="panel-title">Top Products</div></div><div class="panel-body"><div id="execProducts" class="list"></div></div></section><section class="panel"><div class="panel-head"><div class="panel-title">Inventory Signals</div></div><div class="panel-body"><div id="execInventory" class="list"></div></div></section></div><section class="panel"><div class="panel-head"><div class="panel-title">Data & Reporting</div><div class="panel-meta">Export current records</div></div><div class="panel-body"><div class="quick-actions"><button class="btn" id="exportOrdersBtn">⬇ Orders CSV</button><button class="btn" id="exportCustomersBtn">⬇ Customers CSV</button><button class="btn" id="exportProductsBtn">⬇ Products CSV</button><button class="btn primary" id="execReportsBtn">📈 Open Reports</button></div></div></section><section class="panel"><div class="panel-head"><div class="panel-title">Security & Accountability</div></div><div class="panel-body"><div class="stat-row"><div class="item"><div class="item-title">👤 Staff</div><div class="item-sub" id="execStaff"></div></div><div class="item"><div class="item-title">📝 Audit log</div><div class="item-sub">Available from Activity</div></div><div class="item"><div class="item-title">🔐 Session lock</div><div class="item-sub">30-minute inactivity protection</div></div><div class="item"><div class="item-title">💾 Offline</div><div class="item-sub">Queued changes sync on reconnect</div></div></div></div></section></div></div></div>';
+    document.body.appendChild(wrap);
+    document.getElementById("execClose").onclick=function(){wrap.remove()};
+    wrap.addEventListener("click",function(e){if(e.target===wrap)wrap.remove()});
+    try{
+      var apiFn=window.__smOriginalApiForV2;
+      if(typeof apiFn!=="function")throw new Error("API bridge unavailable");
+      var results=await Promise.allSettled([
+        apiFn("admin_dashboard",{}, {force:true}),
+        apiFn("admin_inventory",{}, {force:true}),
+        apiFn("admin_staff",{}, {force:true})
+      ]);
+      var d=results[0].status==="fulfilled"?results[0].value:{summary:{},topProducts:[]};
+      var inv=results[1].status==="fulfilled"&&Array.isArray(results[1].value)?results[1].value:[];
+      var staff=results[2].status==="fulfilled"&&Array.isArray(results[2].value)?results[2].value:[];
+      var s=d.summary||{};
+      document.getElementById("execSummary").innerHTML='<div class="card blue-top"><div class="label">Revenue</div><div class="value">'+money2(s.totalRevenue)+'</div><div class="sub">'+num2(s.totalSales)+' recorded sales</div></div><div class="card green-top"><div class="label">Recorded profit</div><div class="value">'+money2(s.totalProfit)+'</div><div class="sub">Based on current sales data</div></div><div class="card amber-top"><div class="label">Orders</div><div class="value">'+num2(s.totalOrders)+'</div><div class="sub">'+num2(s.pendingOrders)+' pending · '+num2(s.unpaidOrders)+' unpaid</div></div><div class="card red-top"><div class="label">Stock alerts</div><div class="value">'+num2(inv.filter(function(x){return String(x.stockStatus||"").indexOf("OUT")>=0}).length)+'</div><div class="sub">'+num2(inv.filter(function(x){return x.classification==="FAST MOVING"}).length)+' fast-moving</div></div>';
+      document.getElementById("execProducts").innerHTML=(d.topProducts||[]).slice(0,5).map(function(p,i){return '<div class="item"><div class="item-title">'+(i+1)+'. '+esc2(p.productName)+'</div><div class="item-sub">'+num2(p.quantity)+' units · '+money2(p.revenue)+' revenue · '+money2(p.profit)+' profit</div></div>'}).join("")||'<div class="empty">No product data.</div>';
+      var alerts=inv.filter(function(x){return String(x.stockStatus||"").indexOf("OUT")>=0||x.classification==="SLOW MOVING"}).slice(0,8);
+      document.getElementById("execInventory").innerHTML=alerts.map(function(x){return '<div class="item"><div class="item-title">'+esc2(x.productName)+'</div><div class="item-sub">'+esc2(x.category)+' · '+esc2(x.stockStatus)+' · '+esc2(x.classification)+'</div></div>'}).join("")||'<div class="empty">No critical inventory signals.</div>';
+      document.getElementById("execStaff").textContent=staff.filter(function(x){return x.active!==false}).length+' active of '+staff.length+' accounts';
+      document.getElementById("execLoading").style.display="none";
+      document.getElementById("execBody").style.display="block";
+    }catch(e){document.getElementById("execLoading").textContent="Unable to load executive data right now."}
+    document.getElementById("exportOrdersBtn").onclick=function(){exportApiCsv("admin_orders",{},"sweet-mart-orders")};
+    document.getElementById("exportCustomersBtn").onclick=function(){exportApiCsv("admin_customers",{},"sweet-mart-customers")};
+    document.getElementById("exportProductsBtn").onclick=function(){exportApiCsv("admin_products",{},"sweet-mart-products")};
+    document.getElementById("execReportsBtn").onclick=function(){wrap.remove();if(typeof showPage==="function")showPage("reports")};
+  }
+  function money2(v){return"GH₵"+Number(v||0).toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2})}
+  function num2(v){return Number(v||0).toLocaleString("en-GH")}
+  function csvCell(v){var s=String(v==null?"":v);return '"'+s.replace(/"/g,'""')+'"'}
+  async function exportApiCsv(action,data,name){
+    try{
+      toast2("Preparing "+name+" export…","info");
+      var apiFn=window.__smOriginalApiForV2;
+      if(typeof apiFn!=="function")throw new Error("API bridge unavailable");
+      var d=await apiFn(action,data,{force:true});
+      var rows=Array.isArray(d)?d:((d&&Array.isArray(d.orders))?d.orders:[]);
+      if(!rows.length){toast2("No records available to export.","info");return}
+      var keys=[];
+      rows.forEach(function(row){Object.keys(row||{}).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k)})});
+      var csv=[keys.map(csvCell).join(",")].concat(rows.map(function(row){return keys.map(function(k){return csvCell(row[k])}).join("\\n")})).join("\\n");
+      var blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+      var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name+"-"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
+      toast2("CSV exported successfully.","success");
+    }catch(e){toast2("Export failed: "+(e.message||"Unknown error"),"error")}
+  }
+
+  function addExecutiveNavButton(){
+    var side=document.getElementById("sideNav");
+    if(side&&!document.getElementById("execNavBtn")){
+      var b=document.createElement("button");b.id="execNavBtn";b.type="button";b.innerHTML='📊 <span class="nav-label">Executive Center</span>';b.onclick=openExecutiveCenter;
+      side.insertBefore(b,side.firstChild);
+    }
+  }
+
   function setupIdleLock(){
     var activity=function(){
       clearTimeout(idleTimer);
@@ -220,6 +283,7 @@
 
   function setup(){
     addNavButton();
+    addExecutiveNavButton();
     addDashboardHealth();
     setupIdleLock();
     setupAndroid();
