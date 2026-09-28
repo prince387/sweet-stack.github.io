@@ -132,9 +132,13 @@
         var db=req.result;
         if(!db.objectStoreNames.contains(backupStore)){db.close();resolve(0);return}
         try{
-          var tx=db.transaction(backupStore,"readonly"),store=tx.objectStore(backupStore),count=0,cur=store.openCursor();
-          cur.onsuccess=function(){var c=cur.result;if(!c){db.close();resolve(count);return}var v=c.value||{};if(v.type==="mutation"||v.action)count++;c.continue()};
-          cur.onerror=function(){db.close();resolve(0)};
+          var tx=db.transaction(backupStore,"readonly"),store=tx.objectStore(backupStore),getReq=store.get("offlineQueue");
+          getReq.onsuccess=function(){
+            var q=getReq.result;
+            db.close();
+            resolve(Array.isArray(q)?q.length:0);
+          };
+          getReq.onerror=function(){db.close();resolve(0)};
         }catch(e){db.close();resolve(0)}
       };
     });
@@ -208,6 +212,12 @@
     }catch(e){}
   }
 
+  window.SweetMartV2RefreshNav=addNavButton;
+  window.SweetMartV2RefreshDashboard=function(){
+    addDashboardHealth();
+    renderDashboardHealth();
+  };
+
   function setup(){
     addNavButton();
     addDashboardHealth();
@@ -215,7 +225,7 @@
     setupAndroid();
     window.addEventListener("online",function(){setTimeout(function(){setLastSync();renderDashboardHealth()},1200)});
     window.addEventListener("offline",renderDashboardHealth);
-    setInterval(function(){addNavButton();addDashboardHealth();renderDashboardHealth()},5000);
+
     var m=meta();m.version=2;m.updatedAt=new Date().toISOString();saveMeta(m);
   }
 
