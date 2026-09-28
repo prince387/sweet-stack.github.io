@@ -42,7 +42,7 @@ jobs:
       - name: Prepare branded Android icon
         run: |
           mkdir -p assets
-          cp sweet-mart-admin-icon-512.png assets/logo.png
+          cp sweet-mart-admin-icon-512.png assets/icon.png
 
       - name: Generate Android launcher icon from SWEET MART logo
         run: npx @capacitor/assets generate --android --iconBackgroundColor "#ffffff" --iconBackgroundColorDark "#111111"
