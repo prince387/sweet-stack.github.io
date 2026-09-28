@@ -96,6 +96,24 @@
     .question-send{width:100%;margin-top:10px;border:none;background:#0b5ed7;color:#fff;padding:13px;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer}
     .question-send:disabled{opacity:.7;cursor:not-allowed}
     .question-status{margin-top:10px;font-size:13px;line-height:1.4;color:#198754;min-height:18px}
+    .customer-menu-button{position:absolute;right:16px;top:18px;width:44px;height:44px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:12px;font-size:21px;font-weight:bold;cursor:pointer}
+    .drawer-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:500}
+    .drawer-overlay.active{display:block}
+    .customer-drawer{position:fixed;left:0;top:0;bottom:0;width:min(310px,88vw);background:#fff;z-index:510;transform:translateX(-105%);transition:transform .22s ease;box-shadow:12px 0 35px rgba(0,0,0,.18);overflow:auto}
+    .customer-drawer.active{transform:translateX(0)}
+    .drawer-head{padding:22px 18px;background:#0b5ed7;color:#fff}.drawer-brand{font-size:20px;font-weight:800}.drawer-user{margin-top:5px;font-size:13px;opacity:.9}
+    .drawer-section{padding:12px 10px}.drawer-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;padding:8px 10px}
+    .drawer-link{width:100%;display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#172033;padding:12px 10px;border-radius:10px;text-align:left;font-size:14px;cursor:pointer}
+    .drawer-link.active,.drawer-link:hover{background:#e8f1ff;color:#0b5ed7;font-weight:700}.drawer-icon{width:24px;text-align:center}
+    .customer-dashboard{padding:16px;padding-bottom:90px;background:#f7f9fc}.dash-hero{background:#0b5ed7;color:#fff;border-radius:16px;padding:18px;margin-bottom:14px}.dash-hero h2{margin:0;font-size:21px}.dash-hero p{margin:5px 0 0;font-size:13px;opacity:.9}
+    .dash-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.dash-stat{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px}.dash-stat small{color:#6b7280}.dash-stat strong{display:block;font-size:22px;margin-top:5px;color:#172033}
+    .dash-section{margin-top:18px}.dash-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}.dash-section-title{font-size:17px;font-weight:800}.text-button{border:0;background:transparent;color:#0b5ed7;font-weight:700;cursor:pointer}
+    .order-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:13px;margin-bottom:9px}.order-top{display:flex;justify-content:space-between;gap:10px}.order-id{font-weight:800}.order-meta{font-size:12px;color:#6b7280;margin-top:4px}.order-total{font-weight:800;color:#0b5ed7}.order-status{display:inline-block;margin-top:9px;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800}.status-success{background:#dcfce7;color:#166534}.status-pending2{background:#fef3c7;color:#92400e}.status-cancelled{background:#fee2e2;color:#991b1b}
+    .customer-page{padding:16px;padding-bottom:90px}.customer-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:12px}.customer-empty{text-align:center;padding:40px 18px;color:#6b7280}.customer-title{font-size:20px;font-weight:800;margin-bottom:5px}.customer-subtitle{font-size:13px;color:#6b7280;margin-bottom:16px}
+    .order-tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}.order-tabs::-webkit-scrollbar{display:none}.order-tab{flex-shrink:0;border:1px solid #d5d9e2;background:#fff;border-radius:18px;padding:8px 12px;font-size:12px;cursor:pointer}.order-tab.active{background:#0b5ed7;color:#fff;border-color:#0b5ed7}
+    .profile-row{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-bottom:1px solid #e5e7eb;font-size:14px}.profile-row:last-child{border-bottom:0}.profile-label{color:#6b7280}.profile-value{font-weight:700;text-align:right;overflow-wrap:anywhere}.mobile-bottom{display:none}
+    @media(max-width:600px){.mobile-bottom{display:grid;position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:600px;grid-template-columns:repeat(4,1fr);background:#fff;border-top:1px solid #e5e7eb;z-index:120;padding:7px 4px}.mobile-bottom button{border:0;background:transparent;color:#6b7280;font-size:11px;padding:7px 2px;cursor:pointer}.mobile-bottom button.active{color:#0b5ed7;font-weight:800}.customer-menu-button{top:16px}.dash-stats{grid-template-columns:repeat(2,1fr)}}
+
     @media (max-width:380px){.products{grid-template-columns:1fr}.product-image{height:200px}}
   </style>
 </head>
@@ -103,10 +121,11 @@
 <div class="app">
 
   <section id="shopPage" class="page active">
-    <header class="header">
+    <header class="header" style="position:relative">
       <div class="brand">SWEET MART</div>
       <div class="tagline">Shop with ease. Get it delivered.</div>
       <button id="backToBotButton" class="back-to-bot" type="button">← Back to Bot</button>
+      <button id="customerMenuButton" class="customer-menu-button" type="button" aria-label="Open customer menu">☰</button>
     </header>
     <div class="search-area">
       <input type="search" id="searchInput" class="search" placeholder="Search products..." autocomplete="off">
@@ -197,6 +216,44 @@
   </section>
 </div>
 
+
+<div id="customerDrawerOverlay" class="drawer-overlay"></div>
+<aside id="customerDrawer" class="customer-drawer" aria-label="Customer navigation">
+  <div class="drawer-head"><div class="drawer-brand">SWEET MART</div><div id="drawerUser" class="drawer-user">My Account</div></div>
+  <div class="drawer-section"><div class="drawer-label">Shopping</div>
+    <button class="drawer-link active" data-customer-view="shopPage" type="button"><span class="drawer-icon">🏠</span>Home</button>
+    <button class="drawer-link" data-customer-view="shopPage" type="button"><span class="drawer-icon">🛍️</span>Shop</button>
+    <button class="drawer-link" data-customer-view="cartPage" type="button"><span class="drawer-icon">🛒</span>My Cart</button>
+  </div>
+  <div class="drawer-section"><div class="drawer-label">My Orders</div>
+    <button class="drawer-link" data-customer-view="dashboardPage" type="button"><span class="drawer-icon">📊</span>My Dashboard</button>
+    <button class="drawer-link" data-customer-view="ordersPage" type="button"><span class="drawer-icon">📦</span>All Orders</button>
+    <button class="drawer-link" data-customer-view="successfulOrdersPage" type="button"><span class="drawer-icon">✅</span>Successful Orders</button>
+    <button class="drawer-link" data-customer-view="pendingOrdersPage" type="button"><span class="drawer-icon">⏳</span>Pending Orders</button>
+  </div>
+  <div class="drawer-section"><div class="drawer-label">Account</div>
+    <button class="drawer-link" data-customer-view="profilePage" type="button"><span class="drawer-icon">👤</span>My Profile</button>
+    <button class="drawer-link" data-customer-view="settingsPage" type="button"><span class="drawer-icon">⚙️</span>Settings</button>
+    <button class="drawer-link" id="drawerBotButton" type="button"><span class="drawer-icon">🤖</span>Back to Telegram Bot</button>
+  </div>
+</aside>
+<section id="dashboardPage" class="page">
+  <div class="page-header"><button class="page-back" id="dashboardBack" type="button">← Shop</button><div class="page-title">My Dashboard</div><button class="page-exit" id="dashboardBot" type="button">Bot</button></div>
+  <main class="customer-dashboard"><div class="dash-hero"><h2 id="dashboardGreeting">Welcome back 👋</h2><p>Here is your SWEET MART order overview.</p></div>
+    <div class="dash-stats"><div class="dash-stat"><small>Overall Orders</small><strong id="statAllOrders">—</strong></div><div class="dash-stat"><small>Successful</small><strong id="statSuccessful">—</strong></div><div class="dash-stat"><small>Pending</small><strong id="statPending">—</strong></div><div class="dash-stat"><small>Cancelled</small><strong id="statCancelled">—</strong></div></div>
+    <section class="dash-section"><div class="dash-section-head"><div class="dash-section-title">Recent Orders</div><button class="text-button" id="dashboardViewOrders" type="button">View all</button></div><div id="dashboardRecentOrders"></div></section>
+  </main>
+</section>
+<section id="ordersPage" class="page">
+  <div class="page-header"><button class="page-back" type="button" data-customer-view="dashboardPage">← Dashboard</button><div class="page-title">My Orders</div><button class="page-exit" type="button" id="ordersBot">Bot</button></div>
+  <main class="customer-page"><div class="order-tabs"><button class="order-tab active" data-order-filter="all" type="button">All</button><button class="order-tab" data-order-filter="successful" type="button">Successful</button><button class="order-tab" data-order-filter="pending" type="button">Pending</button><button class="order-tab" data-order-filter="cancelled" type="button">Cancelled</button></div><div id="customerOrdersList" style="margin-top:12px"></div></main>
+</section>
+<section id="successfulOrdersPage" class="page"><div class="page-header"><button class="page-back" type="button" data-customer-view="dashboardPage">← Dashboard</button><div class="page-title">Successful Orders</div><button class="page-exit" type="button" id="successfulBot">Bot</button></div><main class="customer-page"><div class="customer-subtitle">Your completed and successful SWEET MART orders.</div><div id="successfulOrdersList"></div></main></section>
+<section id="pendingOrdersPage" class="page"><div class="page-header"><button class="page-back" type="button" data-customer-view="dashboardPage">← Dashboard</button><div class="page-title">Pending Orders</div><button class="page-exit" type="button" id="pendingBot">Bot</button></div><main class="customer-page"><div class="customer-subtitle">Orders that are still being processed or awaiting payment.</div><div id="pendingOrdersList"></div></main></section>
+<section id="profilePage" class="page"><div class="page-header"><button class="page-back" type="button" data-customer-view="dashboardPage">← Dashboard</button><div class="page-title">My Profile</div><button class="page-exit" type="button" id="profileBot">Bot</button></div><main class="customer-page"><div class="customer-card"><div class="customer-title">Account Information</div><div class="customer-subtitle">Your Telegram account details.</div><div id="profileDetails"></div></div></main></section>
+<section id="settingsPage" class="page"><div class="page-header"><button class="page-back" type="button" data-customer-view="dashboardPage">← Dashboard</button><div class="page-title">Settings</div><button class="page-exit" type="button" id="settingsBot">Bot</button></div><main class="customer-page"><div class="customer-card"><div class="customer-title">SWEET MART Settings</div><div class="customer-subtitle">Your preferences will be managed here as we continue upgrading the Mini App.</div><div class="profile-row"><span class="profile-label">Telegram Mini App</span><span class="profile-value">Connected</span></div><div class="profile-row"><span class="profile-label">Order notifications</span><span class="profile-value">Enabled</span></div></div></main></section>
+<nav class="mobile-bottom" aria-label="Quick navigation"><button class="active" data-customer-view="shopPage" type="button">🏠<br>Home</button><button data-customer-view="dashboardPage" type="button">📊<br>Orders</button><button data-customer-view="cartPage" type="button">🛒<br>Cart</button><button data-customer-view="profilePage" type="button">👤<br>Account</button></nav>
+
 <div id="questionOverlay" class="question-overlay" role="dialog" aria-modal="true" aria-labelledby="questionTitle">
   <div class="question-card">
     <div class="question-head">
@@ -224,6 +281,21 @@
   let currentPage = "shopPage";
   let questionProduct = null;
   let productOrderLaunchHandled = false;
+
+
+  let customerOrders = [];
+  let customerOrderFilter = "all";
+  function normalizeOrderStatus(order){const raw=String(order.status||order.orderStatus||order.paymentStatus||"").toLowerCase();if(raw.includes("cancel"))return"cancelled";if(raw.includes("deliver")||raw.includes("success")||raw.includes("complete")||raw.includes("paid"))return"successful";return"pending";}
+  function customerOrderId(order){return String(order.orderId||order.id||order.orderNumber||"Order");}
+  function customerOrderTotal(order){const value=Number(order.totalAmount??order.total??order.amount??0);return Number.isFinite(value)?value:0;}
+  function renderCustomerOrder(order){const status=normalizeOrderStatus(order);const label=status==="successful"?"Successful":status==="cancelled"?"Cancelled":"Pending";const cls=status==="successful"?"status-success":status==="cancelled"?"status-cancelled":"status-pending2";const dateValue=order.date||order.orderDate||order.createdAt||"";const dateText=dateValue?String(dateValue).slice(0,16):"Date unavailable";return '<div class="order-card"><div class="order-top"><div><div class="order-id">#'+customerOrderId(order)+'</div><div class="order-meta">'+dateText+'</div></div><div class="order-total">GH₵'+customerOrderTotal(order).toFixed(2)+'</div></div><span class="order-status '+cls+'">'+label+'</span></div>';}
+  function renderOrderList(targetId,orders){const target=document.getElementById(targetId);if(!target)return;if(!Array.isArray(orders)||orders.length===0){target.innerHTML='<div class="customer-card customer-empty">No orders found yet.</div>';return;}target.innerHTML=orders.slice(0,100).map(renderCustomerOrder).join("");}
+  function refreshCustomerDashboard(){const profile=getTelegramUserProfile();const name=profile.firstName||"Customer";const greeting=document.getElementById("dashboardGreeting");if(greeting)greeting.textContent="Welcome back, "+name+" 👋";const successful=customerOrders.filter(o=>normalizeOrderStatus(o)==="successful"),pending=customerOrders.filter(o=>normalizeOrderStatus(o)==="pending"),cancelled=customerOrders.filter(o=>normalizeOrderStatus(o)==="cancelled");const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=String(value);};set("statAllOrders",customerOrders.length);set("statSuccessful",successful.length);set("statPending",pending.length);set("statCancelled",cancelled.length);renderOrderList("dashboardRecentOrders",customerOrders.slice(0,5));renderOrderList("customerOrdersList",customerOrderFilter==="all"?customerOrders:customerOrders.filter(o=>normalizeOrderStatus(o)===customerOrderFilter));renderOrderList("successfulOrdersList",successful);renderOrderList("pendingOrdersList",pending);}
+  async function loadCustomerOrders(){const telegramUserId=getTelegramUserId();if(!telegramUserId){customerOrders=[];refreshCustomerDashboard();return;}try{const response=await fetch("/api?action=customer_orders&telegramUserId="+encodeURIComponent(telegramUserId),{method:"GET"});if(!response.ok)throw new Error("HTTP "+response.status);const result=await response.json();if(!result.success)throw new Error(result.error||"Unable to load orders.");customerOrders=Array.isArray(result.data)?result.data:(Array.isArray(result.orders)?result.orders:[]);customerOrders.sort((a,b)=>String(b.createdAt||b.orderDate||b.date||"").localeCompare(String(a.createdAt||a.orderDate||a.date||"")));}catch(error){console.error("Customer orders loading error:",error);customerOrders=[];}refreshCustomerDashboard();}
+  function closeCustomerDrawer(){const drawer=document.getElementById("customerDrawer"),overlay=document.getElementById("customerDrawerOverlay");if(drawer)drawer.classList.remove("active");if(overlay)overlay.classList.remove("active");}
+  function openCustomerDrawer(){const drawer=document.getElementById("customerDrawer"),overlay=document.getElementById("customerDrawerOverlay");if(drawer)drawer.classList.add("active");if(overlay)overlay.classList.add("active");}
+  function openCustomerView(pageId){closeCustomerDrawer();if(!document.getElementById(pageId))return;if(pageId==="shopPage"){history.replaceState({pageId:"shopPage"},"","#shopPage");setPage("shopPage");}else{showPage(pageId);if(["dashboardPage","ordersPage","successfulOrdersPage","pendingOrdersPage"].includes(pageId))loadCustomerOrders();}document.querySelectorAll("[data-customer-view]").forEach(btn=>btn.classList.toggle("active",btn.dataset.customerView===pageId));}
+  function populateCustomerProfile(){const profile=getTelegramUserProfile(),id=getTelegramUserId();const name=[profile.firstName,profile.lastName].filter(Boolean).join(" ")||"Telegram Customer";const target=document.getElementById("profileDetails"),drawerUser=document.getElementById("drawerUser");if(drawerUser)drawerUser.textContent=name;if(target)target.innerHTML='<div class="profile-row"><span class="profile-label">Name</span><span class="profile-value">'+name+'</span></div><div class="profile-row"><span class="profile-label">Username</span><span class="profile-value">'+(profile.username?"@"+profile.username:"Not provided")+'</span></div><div class="profile-row"><span class="profile-label">Telegram ID</span><span class="profile-value">'+(id||"Unavailable")+'</span></div>';}
 
   function tgReady() {
     try {
@@ -817,9 +889,23 @@
     });
   });
 
+
+  document.getElementById("customerMenuButton").addEventListener("click", openCustomerDrawer);
+  document.getElementById("customerDrawerOverlay").addEventListener("click", closeCustomerDrawer);
+  document.querySelectorAll("[data-customer-view]").forEach(function(btn){btn.addEventListener("click",function(){openCustomerView(this.dataset.customerView);});});
+  document.getElementById("drawerBotButton").addEventListener("click", closeMiniAppToBot);
+  ["dashboardBot","ordersBot","successfulBot","pendingBot","profileBot","settingsBot"].forEach(function(id){const el=document.getElementById(id);if(el)el.addEventListener("click",closeMiniAppToBot);});
+  document.getElementById("dashboardBack").addEventListener("click",function(){openCustomerView("shopPage");});
+  document.getElementById("dashboardViewOrders").addEventListener("click",function(){openCustomerView("ordersPage");});
+  document.querySelectorAll(".order-tab").forEach(function(tab){tab.addEventListener("click",function(){document.querySelectorAll(".order-tab").forEach(function(t){t.classList.remove("active");});this.classList.add("active");customerOrderFilter=this.dataset.orderFilter||"all";refreshCustomerDashboard();});});
+  populateCustomerProfile();
+  refreshCustomerDashboard();
+
   tgReady();
   setPage("shopPage");
   loadProducts();
+  loadCustomerOrders();
+  populateCustomerProfile();
   updateCartCount();
 </script>
 </body>
