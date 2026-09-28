@@ -27,8 +27,11 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Prepare Android entry page
-        run: cp admin.html index.html
+      - name: Prepare Capacitor web directory
+        run: |
+          mkdir -p www
+          rsync -a --exclude=www --exclude=.git --exclude=android --exclude=node_modules ./ www/
+          cp admin.html www/index.html
 
       - name: Install Capacitor
         run: npm install
