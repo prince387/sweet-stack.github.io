@@ -120,7 +120,8 @@ async function api(action,data={},options={}){
   }
   const request=(async()=>{
     try{
-      const response=await fetch("/api?action="+encodeURIComponent(action),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      const apiBase=(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())?"https://sweet-stack-github-io.vercel.app/api":"/api";
+      const response=await fetch(apiBase+"?action="+encodeURIComponent(action),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
       const result=await response.json().catch(()=>({}));
       if(!response.ok||!result.success)throw new Error(result.error||"Request failed.");
       const out=result.data;
