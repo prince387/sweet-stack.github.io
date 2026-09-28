@@ -1,4 +1,4 @@
-const CACHE_NAME = "sweet-mart-admin-v11";
+const CACHE_NAME = "sweet-mart-admin-v12";
 const APP_SHELL = [
   "/admin.html",
   "/admin-v2.js",
