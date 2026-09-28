@@ -39,7 +39,7 @@
     document.getElementById("v2Sync").onclick=async function(){
       this.disabled=true;
       try{
-        window.dispatchEvent(new Event("online"));
+        if(typeof window.SweetMartFlushOfflineQueue==="function")await window.SweetMartFlushOfflineQueue();
         setLastSync();
         await renderHealth();
         toast2("Sync requested.","success");
@@ -191,7 +191,7 @@
     if(!q.length){el.innerHTML='<div class="empty">No queued changes. Everything is synchronized.</div>';return}
     el.innerHTML=q.slice(0,12).map(function(x,i){
       var action=esc2(x.action||"Queued change");
-      var when=x.queuedAt?new Date(x.queuedAt).toLocaleString():"Pending";
+      var when=x.createdAt?new Date(x.createdAt).toLocaleString():"Pending";
       var tries=Number(x.attempts||0);
       return '<div class="item"><div class="item-title">'+(i+1)+'. '+action+'</div><div class="item-sub">'+esc2(when)+' · '+tries+' attempt'+(tries===1?"":"s")+'</div></div>';
     }).join("")+(q.length>12?'<div class="small-muted">Showing first 12 of '+q.length+' queued changes.</div>':"");
@@ -255,11 +255,13 @@
       var results=await Promise.allSettled([
         apiFn("admin_dashboard",{}, {force:true}),
         apiFn("admin_inventory",{}, {force:true}),
-        apiFn("admin_staff",{}, {force:true})
+        apiFn("admin_staff",{}, {force:true}),
+        apiFn("admin_payments",{paymentStatus:""},{force:true})
       ]);
       var d=results[0].status==="fulfilled"?results[0].value:{summary:{},topProducts:[]};
       var inv=results[1].status==="fulfilled"&&Array.isArray(results[1].value)?results[1].value:[];
       var staff=results[2].status==="fulfilled"&&Array.isArray(results[2].value)?results[2].value:[];
+      var payments=results[3].status==="fulfilled"?(Array.isArray(results[3].value)?results[3].value:((results[3].value&&Array.isArray(results[3].value.orders))?results[3].value.orders:[])):[];
       var s=d.summary||{};
       document.getElementById("execSummary").innerHTML='<div class="card blue-top"><div class="label">Revenue</div><div class="value">'+money2(s.totalRevenue)+'</div><div class="sub">'+num2(s.totalSales)+' recorded sales</div></div><div class="card green-top"><div class="label">Recorded profit</div><div class="value">'+money2(s.totalProfit)+'</div><div class="sub">Based on current sales data</div></div><div class="card amber-top"><div class="label">Orders</div><div class="value">'+num2(s.totalOrders)+'</div><div class="sub">'+num2(s.pendingOrders)+' pending · '+num2(s.unpaidOrders)+' unpaid</div></div><div class="card red-top"><div class="label">Stock alerts</div><div class="value">'+num2(inv.filter(function(x){return String(x.stockStatus||"").indexOf("OUT")>=0}).length)+'</div><div class="sub">'+num2(inv.filter(function(x){return x.classification==="FAST MOVING"}).length)+' fast-moving</div></div>';
       document.getElementById("execProducts").innerHTML=(d.topProducts||[]).slice(0,5).map(function(p,i){return '<div class="item"><div class="item-title">'+(i+1)+'. '+esc2(p.productName)+'</div><div class="item-sub">'+num2(p.quantity)+' units · '+money2(p.revenue)+' revenue · '+money2(p.profit)+' profit</div></div>'}).join("")||'<div class="empty">No product data.</div>';
@@ -287,7 +289,7 @@
       if(!rows.length){toast2("No records available to export.","info");return}
       var keys=[];
       rows.forEach(function(row){Object.keys(row||{}).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k)})});
-      var csv=[keys.map(csvCell).join(",")].concat(rows.map(function(row){return keys.map(function(k){return csvCell(row[k])}).join("\\n")})).join("\\n");
+      var csv=[keys.map(csvCell).join(",")].concat(rows.map(function(row){return keys.map(function(k){return csvCell(row[k])}).join("\n")})).join("\n");
       var blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
       var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name+"-"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
       toast2("CSV exported successfully.","success");
@@ -357,7 +359,6 @@
     window.addEventListener("online",function(){setTimeout(function(){setLastSync();renderDashboardHealth();renderHealth()},1200)});
     window.addEventListener("offline",function(){renderDashboardHealth();renderHealth()});
     document.addEventListener("visibilitychange",function(){if(!document.hidden)retrySync()});
-    setInterval(function(){if(navigator.onLine)retrySync()},15000);
 
     var m=meta();m.version=3;m.updatedAt=new Date().toISOString();saveMeta(m);
   }
