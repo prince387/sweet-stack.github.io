@@ -38,7 +38,7 @@
     document.getElementById("v2Sync").onclick=async function(){
       this.disabled=true;
       try{
-        if(typeof window.flushOfflineQueue==="function")await window.flushOfflineQueue();
+        window.dispatchEvent(new Event("online"));
         setLastSync();
         await renderHealth();
         toast2("Sync requested.","success");
@@ -59,8 +59,7 @@
     document.getElementById("v2File").onchange=function(){if(this.files&&this.files[0])importBackup(this.files[0])};
     document.getElementById("v2Lock").onclick=function(){
       wrap.remove();
-      if(typeof window.clearSession==="function")window.clearSession();
-      if(typeof window.showLogin==="function")window.showLogin("Dashboard locked. Please sign in again.");
+      var lb=document.querySelector(".nav-logout"); if(lb)lb.click(); else { localStorage.removeItem("sweetMartAdminCredentials"); location.reload(); }
       toast2("Dashboard locked.","info");
     };
   }
@@ -182,8 +181,7 @@
       if(!document.getElementById("app")||document.getElementById("app").classList.contains("hidden"))return;
       idleTimer=setTimeout(function(){
         if(document.getElementById("app")&&!document.getElementById("app").classList.contains("hidden")){
-          if(typeof window.clearSession==="function")window.clearSession();
-          if(typeof window.showLogin==="function")window.showLogin("Your dashboard was locked after 30 minutes of inactivity.");
+          var lb=document.querySelector(".nav-logout"); if(lb)lb.click(); else { localStorage.removeItem("sweetMartAdminCredentials"); location.reload(); }
           toast2("Dashboard locked for security.","info");
         }
       },AUTO_LOCK_MS);
@@ -199,10 +197,10 @@
           var modal=document.getElementById("modal");
           var v2=document.getElementById("smV2Center");
           if(v2){v2.remove();return}
-          if(modal&&modal.classList.contains("open")){if(typeof window.closeModal==="function")window.closeModal();return}
-          if(window.innerWidth<=1000&&document.querySelector(".sidebar.open")){if(typeof window.closeSidebar==="function")window.closeSidebar();return}
+          if(modal&&modal.classList.contains("open")){var x=document.getElementById("modalClose"); if(x)x.click();return}
+          if(window.innerWidth<=1000&&document.querySelector(".sidebar.open")){document.querySelector(".sidebar").classList.remove("open");var ov=document.getElementById("sidebarOverlay");if(ov)ov.classList.remove("open");return}
           var app=document.getElementById("app");
-          if(app&&!app.classList.contains("hidden")&&typeof window.showLogin==="function"){
+          if(app&&!app.classList.contains("hidden")){
             if(confirm("Exit SWEET MART Admin?"))window.Capacitor.Plugins.App.exitApp();
           }
         });
