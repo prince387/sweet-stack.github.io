@@ -2,6 +2,7 @@
 (function(){
   "use strict";
   var META_KEY="sweetMartV2Meta";
+  var ENHANCED_VERSION="3.0";
   var LAST_SYNC_KEY="sweetMartV2LastSync";
   var AUTO_LOCK_MS=30*60*1000;
   var idleTimer=null;
@@ -30,7 +31,7 @@
     var wrap=document.createElement("div");
     wrap.id="smV2Center";
     wrap.className="modal open";
-    wrap.innerHTML='<div class="modal-card v2-center-card"><div class="modal-head"><div><div class="modal-title">SWEET MART Admin V2</div><div class="small-muted">System health, offline tools and recovery</div></div><button class="close" id="v2Close">×</button></div><div class="modal-body"><div id="v2Health"></div><div class="panel" style="margin-top:12px"><div class="panel-head"><div class="panel-title">Offline & Sync</div></div><div class="panel-body"><div class="quick-actions"><button class="btn primary" id="v2Sync">↻ Sync now</button><button class="btn" id="v2RefreshSW">♻ Check app update</button></div><div class="small-muted" id="v2SyncText" style="margin-top:9px"></div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">Local Backup</div></div><div class="panel-body"><div class="small-muted">Creates a backup of locally cached dashboard data and preferences. Passwords and session tokens are never included.</div><div class="quick-actions" style="margin-top:9px"><button class="btn" id="v2Export">⬇ Export backup</button><button class="btn" id="v2Import">⬆ Import backup</button><input id="v2File" type="file" accept=".json,application/json" hidden></div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">Session protection</div></div><div class="panel-body"><div class="small-muted">The dashboard locks after 30 minutes of inactivity. Your existing sign-in flow remains unchanged.</div><div class="quick-actions" style="margin-top:9px"><button class="btn" id="v2Lock">🔒 Lock dashboard</button></div></div></div></div></div>';
+    wrap.innerHTML='<div class="modal-card v2-center-card"><div class="modal-head"><div><div class="modal-title">SWEET MART Admin V2 · Enhanced</div><div class="small-muted">System health, offline tools and recovery</div></div><button class="close" id="v2Close">×</button></div><div class="modal-body"><div id="v2Health"></div><div class="panel" style="margin-top:12px"><div class="panel-head"><div class="panel-title">Offline & Sync</div></div><div class="panel-body"><div class="quick-actions"><button class="btn primary" id="v2Sync">↻ Sync now</button><button class="btn" id="v2Retry">🔁 Retry queued</button><button class="btn" id="v2RefreshSW">♻ Check app update</button></div><div class="small-muted" id="v2SyncText" style="margin-top:9px"></div><div id="v2QueueDetail" class="list" style="margin-top:10px"></div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">Local Backup</div></div><div class="panel-body"><div class="small-muted">Creates a backup of locally cached dashboard data and preferences. Passwords and session tokens are never included.</div><div class="quick-actions" style="margin-top:9px"><button class="btn" id="v2Export">⬇ Export backup</button><button class="btn" id="v2Import">⬆ Import backup</button><input id="v2File" type="file" accept=".json,application/json" hidden></div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">Session protection</div></div><div class="panel-body"><div class="small-muted">The dashboard locks after 30 minutes of inactivity. Your existing sign-in flow remains unchanged.</div><div class="quick-actions" style="margin-top:9px"><button class="btn" id="v2Lock">🔒 Lock dashboard</button></div></div></div></div></div>';
     document.body.appendChild(wrap);
     document.getElementById("v2Close").onclick=function(){wrap.remove()};
     wrap.addEventListener("click",function(e){if(e.target===wrap)wrap.remove()});
@@ -45,6 +46,7 @@
       }catch(e){toast2("Sync could not be completed yet.","error")}
       finally{this.disabled=false}
     };
+    document.getElementById("v2Retry").onclick=requestQueueRetry;
     document.getElementById("v2RefreshSW").onclick=async function(){
       try{
         if("serviceWorker" in navigator){
@@ -108,6 +110,26 @@
     }catch(e){toast2("Backup export failed.","error")}
   }
 
+  async function restoreDbSnapshot(items){
+    return new Promise(function(resolve){
+      try{
+        if(!("indexedDB" in window)){resolve(false);return}
+        var req=indexedDB.open(backupDbName);
+        req.onerror=function(){resolve(false)};
+        req.onsuccess=function(){
+          var db=req.result;
+          if(!db.objectStoreNames.contains(backupStore)){db.close();resolve(false);return}
+          try{
+            var tx=db.transaction(backupStore,"readwrite"),store=tx.objectStore(backupStore);
+            items.forEach(function(item){if(item&&item.key!==undefined)store.put(item.value,item.key)});
+            tx.oncomplete=function(){db.close();resolve(true)};
+            tx.onerror=function(){db.close();resolve(false)};
+          }catch(e){db.close();resolve(false)}
+        };
+      }catch(e){resolve(false)}
+    });
+  }
+
   async function importBackup(file){
     try{
       var data=safeParse(await file.text(),null);
@@ -117,7 +139,8 @@
           if(!/password|session|token|credential/i.test(k))localStorage.setItem(k,String(data.localStorage[k]));
         });
       }
-      toast2("Backup preferences restored. Reloading saved data…","success");
+      if(Array.isArray(data.indexedDb)&&data.indexedDb.length&&("indexedDB" in window)){await restoreDbSnapshot(data.indexedDb)}
+      toast2("Backup preferences and local cache restored. Reloading saved data…","success");
       setTimeout(function(){location.reload()},700);
     }catch(e){toast2("Invalid or unreadable backup file.","error")}
   }
@@ -144,6 +167,42 @@
     });
   }
 
+  async function queueItems(){
+    return new Promise(function(resolve){
+      if(!("indexedDB" in window)){resolve([]);return}
+      var req;
+      try{req=indexedDB.open(backupDbName)}catch(e){resolve([]);return}
+      req.onerror=function(){resolve([])};
+      req.onsuccess=function(){
+        var db=req.result;
+        if(!db.objectStoreNames.contains(backupStore)){db.close();resolve([]);return}
+        try{
+          var tx=db.transaction(backupStore,"readonly"),store=tx.objectStore(backupStore),getReq=store.get("offlineQueue");
+          getReq.onsuccess=function(){var q=getReq.result;db.close();resolve(Array.isArray(q)?q:[])};
+          getReq.onerror=function(){db.close();resolve([])};
+        }catch(e){db.close();resolve([])}
+      };
+    });
+  }
+
+  async function renderQueueDetail(){
+    var el=document.getElementById("v2QueueDetail");if(!el)return;
+    var q=await queueItems();
+    if(!q.length){el.innerHTML='<div class="empty">No queued changes. Everything is synchronized.</div>';return}
+    el.innerHTML=q.slice(0,12).map(function(x,i){
+      var action=esc2(x.action||"Queued change");
+      var when=x.queuedAt?new Date(x.queuedAt).toLocaleString():"Pending";
+      var tries=Number(x.attempts||0);
+      return '<div class="item"><div class="item-title">'+(i+1)+'. '+action+'</div><div class="item-sub">'+esc2(when)+' · '+tries+' attempt'+(tries===1?"":"s")+'</div></div>';
+    }).join("")+(q.length>12?'<div class="small-muted">Showing first 12 of '+q.length+' queued changes.</div>':"");
+  }
+
+  async function requestQueueRetry(){
+    if(!navigator.onLine){toast2("You are offline. Retry will start when the connection returns.","info");return}
+    window.dispatchEvent(new Event("online"));
+    setTimeout(function(){renderHealth();renderQueueDetail();renderDashboardHealth()},1800);
+  }
+
   async function renderHealth(){
     var el=document.getElementById("v2Health");if(!el)return;
     var q=await queueCount();
@@ -151,7 +210,8 @@
     var last=getLastSync();
     el.innerHTML='<div class="report-grid"><div class="card blue-top"><div class="label">Connection</div><div class="value">'+(online?"Online":"Offline")+'</div><div class="sub">Live browser status</div></div><div class="card amber-top"><div class="label">Pending sync</div><div class="value">'+q+'</div><div class="sub">Local queued operations</div></div><div class="card green-top"><div class="label">Last sync</div><div class="value" style="font-size:15px">'+(last?esc2(new Date(last).toLocaleTimeString()):"Not recorded")+'</div><div class="sub">'+(last?esc2(new Date(last).toLocaleDateString()):"Use Sync now")+'</div></div><div class="card purple-top"><div class="label">App</div><div class="value" style="font-size:15px">V2</div><div class="sub">Reliability layer active</div></div></div>';
     var st=document.getElementById("v2SyncText");
-    if(st)st.textContent=q?("There are "+q+" locally queued operations."):("No queued operations detected in the local cache.");
+    if(st)st.textContent=q?("There are "+q+" locally queued operations. Automatic retry is active."):("No queued operations detected in the local cache.");
+    renderQueueDetail();
   }
   function esc2(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
 
@@ -185,7 +245,7 @@
     var wrap=document.createElement("div");
     wrap.id="smExecutiveCenter";
     wrap.className="modal open";
-    wrap.innerHTML='<div class="modal-card v2-center-card"><div class="modal-head"><div><div class="modal-title">📊 SWEET MART Executive Center</div><div class="small-muted">Business intelligence, operations and data tools</div></div><button class="close" id="execClose">×</button></div><div class="modal-body"><div id="execLoading" class="empty">Loading live business intelligence…</div><div id="execBody" style="display:none"><div id="execSummary" class="report-grid"></div><div class="grid2" style="margin-top:12px"><section class="panel"><div class="panel-head"><div class="panel-title">Top Products</div></div><div class="panel-body"><div id="execProducts" class="list"></div></div></section><section class="panel"><div class="panel-head"><div class="panel-title">Inventory Signals</div></div><div class="panel-body"><div id="execInventory" class="list"></div></div></section></div><section class="panel"><div class="panel-head"><div class="panel-title">Data & Reporting</div><div class="panel-meta">Export current records</div></div><div class="panel-body"><div class="quick-actions"><button class="btn" id="exportOrdersBtn">⬇ Orders CSV</button><button class="btn" id="exportCustomersBtn">⬇ Customers CSV</button><button class="btn" id="exportProductsBtn">⬇ Products CSV</button><button class="btn primary" id="execReportsBtn">📈 Open Reports</button></div></div></section><section class="panel"><div class="panel-head"><div class="panel-title">Security & Accountability</div></div><div class="panel-body"><div class="stat-row"><div class="item"><div class="item-title">👤 Staff</div><div class="item-sub" id="execStaff"></div></div><div class="item"><div class="item-title">📝 Audit log</div><div class="item-sub">Available from Activity</div></div><div class="item"><div class="item-title">🔐 Session lock</div><div class="item-sub">30-minute inactivity protection</div></div><div class="item"><div class="item-title">💾 Offline</div><div class="item-sub">Queued changes sync on reconnect</div></div></div></div></section></div></div></div>';
+    wrap.innerHTML='<div class="modal-card v2-center-card"><div class="modal-head"><div><div class="modal-title">📊 SWEET MART Executive Center</div><div class="small-muted">Business intelligence, operations and data tools</div></div><button class="close" id="execClose">×</button></div><div class="modal-body"><div id="execLoading" class="empty">Loading live business intelligence…</div><div id="execBody" style="display:none"><div id="execSummary" class="report-grid"></div><div class="grid2" style="margin-top:12px"><section class="panel"><div class="panel-head"><div class="panel-title">Top Products</div></div><div class="panel-body"><div id="execProducts" class="list"></div></div></section><section class="panel"><div class="panel-head"><div class="panel-title">Inventory Signals</div></div><div class="panel-body"><div id="execInventory" class="list"></div></div></section></div><section class="panel"><div class="panel-head"><div class="panel-title">Data & Reporting</div><div class="panel-meta">Export current records</div></div><div class="panel-body"><div class="quick-actions"><button class="btn" id="exportOrdersBtn">⬇ Orders CSV</button><button class="btn" id="exportCustomersBtn">⬇ Customers CSV</button><button class="btn" id="exportProductsBtn">⬇ Products CSV</button><button class="btn primary" id="execReportsBtn">📈 Open Reports</button></div></div></section><section class="panel"><div class="panel-head"><div class="panel-title">Finance & Inventory Operations</div><div class="panel-meta">Live figures from the existing backend</div></div><div class="panel-body"><div class="stat-row"><div class="item"><div class="item-title" id="execPaid">—</div><div class="item-sub">Paid orders</div></div><div class="item"><div class="item-title" id="execUnpaid">—</div><div class="item-sub">Unpaid orders</div></div><div class="item"><div class="item-title" id="execOut">—</div><div class="item-sub">Out of stock</div></div><div class="item"><div class="item-title" id="execLow">—</div><div class="item-sub">Low/slow stock signals</div></div></div></div></section><section class="panel"><div class="panel-head"><div class="panel-title">Security & Accountability</div></div><div class="panel-body"><div class="stat-row"><div class="item"><div class="item-title">👤 Staff</div><div class="item-sub" id="execStaff"></div></div><div class="item"><div class="item-title">📝 Audit log</div><div class="item-sub">Available from Activity</div></div><div class="item"><div class="item-title">🔐 Session lock</div><div class="item-sub">30-minute inactivity protection</div></div><div class="item"><div class="item-title">💾 Offline</div><div class="item-sub">Queued changes sync on reconnect</div></div></div></div></section></div></div></div>';
     document.body.appendChild(wrap);
     document.getElementById("execClose").onclick=function(){wrap.remove()};
     wrap.addEventListener("click",function(e){if(e.target===wrap)wrap.remove()});
@@ -287,10 +347,19 @@
     addDashboardHealth();
     setupIdleLock();
     setupAndroid();
-    window.addEventListener("online",function(){setTimeout(function(){setLastSync();renderDashboardHealth()},1200)});
-    window.addEventListener("offline",renderDashboardHealth);
+    var retrySync=function(){
+      if(!navigator.onLine)return;
+      queueCount().then(function(q){
+        if(q>0){window.dispatchEvent(new Event("online"));}
+        setTimeout(function(){setLastSync();renderDashboardHealth()},1800);
+      });
+    };
+    window.addEventListener("online",function(){setTimeout(retrySync,700)});
+    window.addEventListener("offline",function(){renderDashboardHealth();renderHealth()});
+    document.addEventListener("visibilitychange",function(){if(!document.hidden)retrySync()});
+    setInterval(function(){if(navigator.onLine)retrySync()},15000);
 
-    var m=meta();m.version=2;m.updatedAt=new Date().toISOString();saveMeta(m);
+    var m=meta();m.version=3;m.updatedAt=new Date().toISOString();saveMeta(m);
   }
 
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",setup);else setup();
