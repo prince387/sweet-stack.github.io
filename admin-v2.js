@@ -350,11 +350,11 @@
     var retrySync=function(){
       if(!navigator.onLine)return;
       queueCount().then(function(q){
-        if(q>0){window.dispatchEvent(new Event("online"));}
-        setTimeout(function(){setLastSync();renderDashboardHealth()},1800);
+        if(q>0)window.dispatchEvent(new Event("online"));
+        setTimeout(function(){setLastSync();renderDashboardHealth();renderHealth()},1800);
       });
     };
-    window.addEventListener("online",function(){setTimeout(retrySync,700)});
+    window.addEventListener("online",function(){setTimeout(function(){setLastSync();renderDashboardHealth();renderHealth()},1200)});
     window.addEventListener("offline",function(){renderDashboardHealth();renderHealth()});
     document.addEventListener("visibilitychange",function(){if(!document.hidden)retrySync()});
     setInterval(function(){if(navigator.onLine)retrySync()},15000);
