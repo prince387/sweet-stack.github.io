@@ -39,10 +39,10 @@ jobs:
           node - <<'NODE'
           const fs = require("fs");
           const html = fs.readFileSync("admin.html", "utf8");
-          const start = html.indexOf("<script>\\n");
-          const end = html.lastIndexOf("</script>\\n</body>");
-          if (start < 0 || end < 0 || end <= start) throw new Error("Could not locate the main admin script.");
-          const script = html.slice(start + "<script>\\n".length, end);
+          const startTag = html.indexOf("<script>");
+          const endTag = html.lastIndexOf("</script>");
+          if (startTag < 0 || endTag < 0 || endTag <= startTag) throw new Error("Could not locate the main admin script.");
+          const script = html.slice(startTag + "<script>".length, endTag);
           new Function(script);
           console.log("admin.html inline JavaScript syntax: OK");
           NODE
