@@ -66,8 +66,11 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path("app/build.gradle")
           s = p.read_text()
+
           signing = '''
               signingConfigs {
                   release {
@@ -78,13 +81,21 @@ jobs:
                   }
               }
           '''
+
           if "signingConfigs {" not in s:
               s = s.replace("android {", "android {\n" + signing, 1)
-          s = s.replace(
-              "release {",
-              "release {\n            signingConfig signingConfigs.release",
-              1
+
+          pattern = r"(buildTypes\s*\{\s*release\s*\{)"
+          s, count = re.subn(
+              pattern,
+              r"\1\n            signingConfig signingConfigs.release",
+              s,
+              count=1
           )
+
+          if count != 1:
+              raise SystemExit("Could not locate the Android release build type.")
+
           p.write_text(s)
           PY
           grep -n "signingConfigs\|signingConfig signingConfigs.release" app/build.gradle
