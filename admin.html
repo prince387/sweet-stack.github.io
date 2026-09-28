@@ -147,7 +147,30 @@ async function api(action,data={},options={}){
   try{return await request}finally{delete apiInflight[key]}
 }
 
-function showApp(){document.getElementById("authScreen").classList.add("hidden");document.getElementById("app").classList.remove("hidden")}function showLogin(message){document.getElementById("authScreen").classList.remove("hidden");document.getElementById("app").classList.add("hidden");if(message)loginError(message);document.getElementById("loginUsername").focus()}async function loginDirect(username,password){clearLoginError();const btn=document.getElementById("loginSubmit");const userInput=document.getElementById("loginUsername");const passInput=document.getElementById("loginPassword");btn.disabled=true;btn.textContent="Signing in…";try{const native=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());const d=await api("admin_login",{username:username,password:password});setSession(d.sessionToken);setSavedLogin(username,password);currentUser={username:d.username,displayName:d.displayName,role:d.role,permissions:d.permissions||[]};showApp();buildNav();if(!initialized){initialized=true;await loadDashboard()}setStatus("Signed in successfully.")}catch(e){try{userInput.value=username;passInput.value=password}catch(_e){}const native=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());loginError("Login failed: "+(e&&e.message?e.message:String(e))+" | Online: "+navigator.onLine+" | Native: "+native+" | URL: "+location.href)}finally{btn.disabled=false;btn.textContent="Sign in"}}
+function showApp(){document.getElementById("authScreen").classList.add("hidden");document.getElementById("app").classList.remove("hidden")}function showLogin(message){document.getElementById("authScreen").classList.remove("hidden");document.getElementById("app").classList.add("hidden");if(message)loginError(message);document.getElementById("loginUsername").focus()}async function loginDirect(username,password){
+  clearLoginError();
+  const btn=document.getElementById("loginSubmit");
+  const userInput=document.getElementById("loginUsername");
+  const passInput=document.getElementById("loginPassword");
+  btn.disabled=true;
+  btn.textContent="Signing in…";
+  try{
+    const d=await api("admin_login",{username:username,password:password});
+    setSession(d.sessionToken);
+    setSavedLogin(username,password);
+    currentUser={username:d.username,displayName:d.displayName,role:d.role,permissions:d.permissions||[]};
+    showApp();
+    buildNav();
+    if(!initialized){initialized=true;await loadDashboard()}
+    setStatus("Signed in successfully.")
+  }catch(e){
+    try{userInput.value=username;passInput.value=password}catch(_e){}
+    loginError(e&&e.message?e.message:String(e))
+  }finally{
+    btn.disabled=false;
+    btn.textContent="Sign in"
+  }
+}
 function closeBot(){const a=tg();if(a){try{a.close();return}catch(e){}}try{window.location.href="/"}catch(e){window.history.back()}}
 function buildNav(){const side=document.getElementById("sideNav"),mobile=document.getElementById("mobileNav");side.innerHTML="";mobile.innerHTML="";const perms=Array.isArray(currentUser&&currentUser.permissions)?currentUser.permissions:[];const visible=navItems.filter(function(item){return item[0]==="dashboard"||textPermAllowed(item[0],perms)});visible.forEach(function(item){const[id,icon,label]=item;[side,mobile].forEach(function(nav){const b=document.createElement("button");b.type="button";b.dataset.page=id;b.innerHTML=icon+' <span class="nav-label">'+esc(label)+'</span>'+((id==="orders"||id==="messages"||id==="notifications")?' <span class="nav-badge" data-badge="'+id+'">0</span>':"");b.addEventListener("click",function(){showPage(id);if(window.innerWidth<=1000)closeSidebar()});nav.appendChild(b)})});if(!visible.some(function(x){return x[0]===currentPage}))currentPage="dashboard";updateNav();updateBadges()}
 function textPermAllowed(id,perms){return perms.indexOf(id)>=0}function updateNav(){document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===currentPage));document.getElementById("pageTitle").textContent=navItems.find(x=>x[0]===currentPage)[2]}
