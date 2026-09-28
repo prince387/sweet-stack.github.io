@@ -1,436 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>SWEET MART Admin Dashboard</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root{
-      --bg:#f4f7fb;
-      --surface:#ffffff;
-      --surface-2:#f8fafc;
-      --text:#152033;
-      --muted:#667085;
-      --border:#e5eaf0;
-      --blue:#0b5ed7;
-      --green:#198754;
-      --amber:#c47b00;
-      --red:#dc3545;
-      --purple:#6f42c1;
-      --shadow:0 8px 26px rgba(16,24,40,.07);
-      --radius:16px;
-    }
-    @media (prefers-color-scheme: dark){
-      :root{
-        --bg:#0f141b;
-        --surface:#171d26;
-        --surface-2:#202733;
-        --text:#f2f4f7;
-        --muted:#98a2b3;
-        --border:#2c3542;
-        --blue:#4d8dff;
-        --green:#35b87c;
-        --amber:#e1a72e;
-        --red:#ff6874;
-        --purple:#9a72e5;
-        --shadow:none;
-      }
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
-    body{min-height:100vh}
-    button{font:inherit}
-    .app{max-width:1120px;margin:0 auto;padding:16px}
-    .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
-    .brand-wrap{display:flex;align-items:center;gap:12px}
-    .brand-mark{width:44px;height:44px;border-radius:13px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:22px;font-weight:800}
-    .brand{font-size:22px;font-weight:800}
-    .subtitle{font-size:12px;color:var(--muted);margin-top:3px}
-    .top-actions{display:flex;align-items:center;gap:8px}
-    .top-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:10px 13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
-    .top-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
-    .status-line{font-size:12px;color:var(--muted);min-height:18px;margin-bottom:12px}
-    .error-box{display:none;background:rgba(220,53,69,.1);border:1px solid rgba(220,53,69,.28);color:var(--red);padding:14px;border-radius:12px;margin-bottom:14px;font-size:13px;line-height:1.45}
-    .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);min-width:0}
-    .card-label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-    .card-value{font-size:25px;font-weight:800;margin-top:8px;overflow-wrap:anywhere}
-    .card-sub{font-size:12px;color:var(--muted);margin-top:5px}
-    .card-blue{border-top:3px solid var(--blue)}
-    .card-green{border-top:3px solid var(--green)}
-    .card-amber{border-top:3px solid var(--amber)}
-    .card-red{border-top:3px solid var(--red)}
-    .grid-2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.9fr);gap:14px;margin-bottom:14px}
-    .section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
-    .section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
-    .section-title{font-size:16px;font-weight:800}
-    .section-meta{font-size:12px;color:var(--muted)}
-    .section-body{padding:16px}
-    .chart{height:220px;display:flex;align-items:flex-end;gap:8px;padding:10px 2px 30px;position:relative}
-    .chart-line{position:absolute;left:0;right:0;top:10px;bottom:30px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
-    .grid-line{border-top:1px dashed var(--border)}
-    .bars{height:100%;display:flex;align-items:flex-end;gap:7px;flex:1;position:relative;z-index:1}
-    .bar-col{height:100%;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px}
-    .bar{width:100%;max-width:32px;border-radius:7px 7px 2px 2px;background:var(--blue);min-height:3px}
-    .bar-label{font-size:10px;color:var(--muted);transform:rotate(-45deg);transform-origin:center;margin-top:10px;white-space:nowrap}
-    .donut-wrap{display:flex;align-items:center;justify-content:center;min-height:220px}
-    .donut{width:170px;height:170px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(var(--blue) 0deg 90deg,var(--green) 90deg 180deg,var(--amber) 180deg 270deg,var(--red) 270deg 360deg)}
-    .donut::after{content:"";position:absolute;inset:35px;border-radius:50%;background:var(--surface)}
-    .donut-center{position:relative;z-index:2;text-align:center}
-    .donut-value{font-size:22px;font-weight:800}
-    .donut-label{font-size:11px;color:var(--muted);margin-top:2px}
-    .legend{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:10px}
-    .legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
-    .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
-    .table-wrap{overflow:auto}
-    table{width:100%;border-collapse:collapse;min-width:720px}
-    th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:12px;vertical-align:top}
-    th{color:var(--muted);font-weight:800;background:var(--surface-2);position:sticky;top:0;z-index:1}
-    td strong{font-size:12px}
-    .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:800;white-space:nowrap}
-    .badge.green{background:rgba(25,135,84,.12);color:var(--green)}
-    .badge.amber{background:rgba(196,123,0,.12);color:var(--amber)}
-    .badge.red{background:rgba(220,53,69,.12);color:var(--red)}
-    .badge.blue{background:rgba(11,94,215,.12);color:var(--blue)}
-    .badge.purple{background:rgba(111,66,193,.12);color:var(--purple)}
-    .muted{color:var(--muted)}
-    .empty{padding:26px 10px;text-align:center;color:var(--muted);font-size:13px}
-    .two-col-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .list-item{padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
-    .list-title{font-size:13px;font-weight:800;line-height:1.35}
-    .list-small{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
-    .question{font-size:12px;line-height:1.45;margin-top:7px}
-    .loading{opacity:.65}
-    .footer-note{font-size:11px;color:var(--muted);text-align:center;padding:8px 0 16px}
-    @media(max-width:900px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-2{grid-template-columns:1fr}}
-    @media(max-width:520px){.app{padding:10px}.cards{grid-template-columns:1fr 1fr;gap:8px}.card{padding:13px}.card-value{font-size:21px}.topbar{align-items:flex-start}.top-actions{width:100%}.top-btn{flex:1}.two-col-list{grid-template-columns:1fr}.section-body{padding:12px}.chart{height:200px}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SWEET MART Admin</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#f4f7fb;--surface:#fff;--surface2:#f8fafc;--text:#172033;--muted:#667085;--border:#e4e8ef;--blue:#0b5ed7;--green:#198754;--amber:#c47b00;--red:#dc3545;--purple:#6f42c1;--shadow:0 8px 24px rgba(16,24,40,.06);--radius:16px}
+@media(prefers-color-scheme:dark){:root{--bg:#0f141b;--surface:#171d26;--surface2:#202733;--text:#f2f4f7;--muted:#98a2b3;--border:#2c3542;--blue:#5b95ff;--green:#35b87c;--amber:#e1a72e;--red:#ff6874;--purple:#9a72e5;--shadow:none}}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}body{min-height:100vh}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.6;cursor:not-allowed}.app{display:flex;min-height:100vh}.sidebar{width:236px;background:var(--surface);border-right:1px solid var(--border);padding:18px 12px;position:sticky;top:0;height:100vh}.brand{display:flex;gap:10px;align-items:center;padding:8px 8px 18px}.brand-mark{width:40px;height:40px;border-radius:12px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800;font-size:19px}.brand-name{font-weight:800;font-size:17px}.brand-sub{font-size:11px;color:var(--muted);margin-top:2px}.nav{display:flex;flex-direction:column;gap:6px}.nav button{border:none;background:transparent;color:var(--muted);padding:11px 12px;border-radius:10px;text-align:left;font-weight:700;font-size:13px}.nav button.active{background:rgba(11,94,215,.1);color:var(--blue)}.main{flex:1;min-width:0;padding:18px;max-width:1500px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.page-title{font-size:23px;font-weight:800}.page-sub{font-size:12px;color:var(--muted);margin-top:3px}.top-actions{display:flex;gap:8px}.btn{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:10px 12px;border-radius:10px;font-weight:700;font-size:12px}.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn.success{background:var(--green);border-color:var(--green);color:#fff}.btn.danger{background:var(--red);border-color:var(--red);color:#fff}.btn.small{padding:7px 9px;font-size:11px}.status{font-size:12px;color:var(--muted);min-height:18px;margin-bottom:12px}.error{display:none;background:rgba(220,53,69,.1);border:1px solid rgba(220,53,69,.3);color:var(--red);padding:12px;border-radius:12px;margin-bottom:12px;font-size:12px}.page{display:none}.page.active{display:block}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;box-shadow:var(--shadow)}.label{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:.04em}.value{font-size:25px;font-weight:800;margin-top:7px}.sub{font-size:11px;color:var(--muted);margin-top:5px}.blue-top{border-top:3px solid var(--blue)}.green-top{border-top:3px solid var(--green)}.amber-top{border-top:3px solid var(--amber)}.red-top{border-top:3px solid var(--red)}.grid2{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr);gap:14px;margin-bottom:14px}.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 15px;border-bottom:1px solid var(--border);flex-wrap:wrap}.panel-title{font-size:15px;font-weight:800}.panel-meta{font-size:11px;color:var(--muted)}.panel-body{padding:14px}.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.input,.select,.textarea{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:10px;padding:10px 11px;font-size:12px;outline:none}.input:focus,.select:focus,.textarea:focus{border-color:var(--blue)}.input{min-width:180px;flex:1}.select{min-width:145px}.textarea{width:100%;min-height:90px;resize:vertical}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:10px 11px;border-bottom:1px solid var(--border);font-size:11px;text-align:left;vertical-align:top}th{background:var(--surface2);color:var(--muted);font-weight:800;position:sticky;top:0;z-index:1}.badge{display:inline-flex;align-items:center;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:800;white-space:nowrap}.badge.green{background:rgba(25,135,84,.12);color:var(--green)}.badge.amber{background:rgba(196,123,0,.12);color:var(--amber)}.badge.red{background:rgba(220,53,69,.12);color:var(--red)}.badge.blue{background:rgba(11,94,215,.12);color:var(--blue)}.badge.purple{background:rgba(111,66,193,.12);color:var(--purple)}.empty{padding:26px 12px;text-align:center;color:var(--muted);font-size:12px}.list{display:grid;gap:9px}.item{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px}.item-title{font-weight:800;font-size:12px;line-height:1.35}.item-sub{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4}.item-body{font-size:11px;line-height:1.45;margin-top:6px}.chart{height:210px;display:flex;align-items:flex-end;gap:6px;position:relative;padding:8px 4px 28px}.bars{display:flex;align-items:flex-end;gap:6px;height:100%;width:100%}.barcol{flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;min-width:0}.bar{width:100%;max-width:30px;background:var(--blue);border-radius:7px 7px 2px 2px;min-height:3px}.barlabel{font-size:9px;color:var(--muted);transform:rotate(-45deg);white-space:nowrap}.order-donut{width:160px;height:160px;border-radius:50%;margin:0 auto;display:grid;place-items:center;position:relative}.order-donut:after{content:"";position:absolute;inset:34px;background:var(--surface);border-radius:50%}.donut-center{position:relative;z-index:2;text-align:center}.donut-total{font-size:20px;font-weight:800}.donut-sub{font-size:10px;color:var(--muted)}.legend{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-top:10px}.legend-item{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px}.legend-dot{width:8px;height:8px;border-radius:50%}.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;padding:18px;align-items:center;justify-content:center}.modal.open{display:flex}.modal-card{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.2)}.modal-head{display:flex;justify-content:space-between;gap:10px;padding:15px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2}.modal-body{padding:15px}.modal-title{font-size:17px;font-weight:800}.close{border:none;background:var(--surface2);color:var(--text);border-radius:9px;width:36px;height:36px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}.detail{background:var(--surface2);padding:10px;border-radius:10px}.detail-label{font-size:10px;color:var(--muted)}.detail-value{font-size:12px;font-weight:700;margin-top:3px;word-break:break-word}.mobile-nav{display:none}
+@media(max-width:1000px){.sidebar{display:none}.mobile-nav{display:flex;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);z-index:60;overflow:auto}.mobile-nav button{flex:1;min-width:74px;border:none;background:transparent;padding:10px 6px;font-size:10px;color:var(--muted);font-weight:700}.mobile-nav button.active{color:var(--blue)}.main{padding:12px 12px 84px}.cards{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+@media(max-width:560px){.cards{grid-template-columns:1fr 1fr;gap:8px}.value{font-size:20px}.top-actions{width:100%}.top-actions .btn{flex:1}.filters .input,.filters .select{width:100%;min-width:0}.detail-grid{grid-template-columns:1fr}.grid2{gap:8px}}
+</style>
 </head>
 <body>
-  <main class="app">
-    <div class="topbar">
-      <div class="brand-wrap">
-        <div class="brand-mark">S</div>
-        <div>
-          <div class="brand">SWEET MART</div>
-          <div class="subtitle">Admin Business Dashboard</div>
-        </div>
-      </div>
-      <div class="top-actions">
-        <button id="refreshBtn" class="top-btn primary" type="button">↻ Refresh</button>
-        <button id="closeBtn" class="top-btn" type="button">← Bot</button>
-      </div>
-    </div>
-
-    <div id="statusLine" class="status-line">Connecting to your business data…</div>
-    <div id="errorBox" class="error-box"></div>
-
-    <section id="dashboardContent" class="loading">
-      <div class="cards">
-        <div class="card card-blue"><div class="card-label">Revenue</div><div id="totalRevenue" class="card-value">GH₵0.00</div><div class="card-sub" id="totalSales">0 sales</div></div>
-        <div class="card card-green"><div class="card-label">Profit</div><div id="totalProfit" class="card-value">GH₵0.00</div><div class="card-sub">From recorded sales</div></div>
-        <div class="card card-amber"><div class="card-label">Orders</div><div id="totalOrders" class="card-value">0</div><div class="card-sub" id="pendingOrders">0 pending</div></div>
-        <div class="card card-red"><div class="card-label">Customers</div><div id="totalCustomers" class="card-value">0</div><div class="card-sub" id="questionsCount">0 unanswered questions</div></div>
-      </div>
-
-      <div class="cards">
-        <div class="card"><div class="card-label">Products</div><div id="totalProducts" class="card-value">0</div><div class="card-sub" id="stockSummary">0 in stock</div></div>
-        <div class="card"><div class="card-label">Paid Orders</div><div id="paidOrders" class="card-value">0</div><div class="card-sub" id="unpaidOrders">0 unpaid</div></div>
-        <div class="card"><div class="card-label">Out For Delivery</div><div id="outForDelivery" class="card-value">0</div><div class="card-sub" id="deliveredOrders">0 delivered</div></div>
-        <div class="card"><div class="card-label">Active FAQs</div><div id="activeFaqs" class="card-value">0</div><div class="card-sub" id="notificationsCount">0 pending notifications</div></div>
-      </div>
-
-      <div class="grid-2">
-        <section class="section">
-          <div class="section-head"><div class="section-title">Revenue — last 14 days</div><div id="trendTotal" class="section-meta">GH₵0.00</div></div>
-          <div class="section-body"><div id="salesChart" class="chart"></div></div>
-        </section>
-        <section class="section">
-          <div class="section-head"><div class="section-title">Order status</div><div class="section-meta">Current distribution</div></div>
-          <div class="section-body"><div class="donut-wrap"><div id="orderDonut" class="donut"><div class="donut-center"><div id="orderDonutValue" class="donut-value">0</div><div class="donut-label">orders</div></div></div></div><div id="orderLegend" class="legend"></div></div>
-        </section>
-      </div>
-
-      <section class="section">
-        <div class="section-head"><div class="section-title">Recent Orders</div><div class="section-meta">Latest 12</div></div>
-        <div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Product</th><th>Amount</th><th>Status</th><th>Payment</th><th>Date</th><th>Delivery</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
-      </section>
-
-      <div class="grid-2">
-        <section class="section">
-          <div class="section-head"><div class="section-title">Top Products</div><div class="section-meta">By revenue</div></div>
-          <div class="section-body"><div id="topProducts" class="two-col-list"></div></div>
-        </section>
-        <section class="section">
-          <div class="section-head"><div class="section-title">Stock Alerts</div><div class="section-meta">Out of stock</div></div>
-          <div class="section-body"><div id="stockAlerts" class="two-col-list"></div></div>
-        </section>
-      </div>
-
-      <section class="section">
-        <div class="section-head"><div class="section-title">Recent Sales</div><div class="section-meta">Latest 12</div></div>
-        <div class="table-wrap"><table><thead><tr><th>Sale</th><th>Order</th><th>Product</th><th>Revenue</th><th>Profit</th><th>Payment</th><th>Date</th></tr></thead><tbody id="salesBody"></tbody></table></div>
-      </section>
-
-      <div class="grid-2">
-        <section class="section">
-          <div class="section-head"><div class="section-title">Customer Questions</div><div class="section-meta">Latest questions</div></div>
-          <div class="section-body"><div id="questionsList"></div></div>
-        </section>
-        <section class="section">
-          <div class="section-head"><div class="section-title">Admin Activity</div><div class="section-meta">Latest actions</div></div>
-          <div class="section-body"><div id="activityList"></div></div>
-        </section>
-      </div>
-    </section>
-
-    <div id="footerNote" class="footer-note">Data is loaded from your SWEET MART Google Sheets backend.</div>
-  </main>
-
+<div class="app">
+<aside class="sidebar"><div class="brand"><div class="brand-mark">S</div><div><div class="brand-name">SWEET MART</div><div class="brand-sub">Business Control Center</div></div></div><nav class="nav" id="sideNav"></nav></aside>
+<main class="main"><div class="topbar"><div><div id="pageTitle" class="page-title">Dashboard</div><div class="page-sub">Manage your business from one place.</div></div><div class="top-actions"><button class="btn primary" id="refreshBtn" type="button">↻ Refresh</button><button class="btn" id="closeBtn" type="button">← Bot</button></div></div><div id="status" class="status">Connecting…</div><div id="error" class="error"></div><section class="page active" id="page-dashboard"></section><section class="page" id="page-orders"></section><section class="page" id="page-customers"></section><section class="page" id="page-products"></section><section class="page" id="page-questions"></section><section class="page" id="page-faqs"></section><section class="page" id="page-notifications"></section><section class="page" id="page-activity"></section><section class="page" id="page-settings"></section></main></div>
+<nav class="mobile-nav" id="mobileNav"></nav>
+<div class="modal" id="modal"><div class="modal-card"><div class="modal-head"><div class="modal-title" id="modalTitle">Details</div><button class="close" id="modalClose" type="button">×</button></div><div class="modal-body" id="modalBody"></div></div></div>
 <script>
-(function(){
-  "use strict";
-  let initialized = false;
+(function(){"use strict";let initialized=false,currentPage="dashboard";let cache={dashboard:null,orders:[],customers:[],products:[],questions:[],faqs:[],notifications:[],activity:[]};
+const navItems=[["dashboard","📊","Dashboard"],["orders","🛒","Orders"],["customers","👥","Customers"],["products","📦","Products"],["questions","💬","Questions"],["faqs","🧠","FAQs"],["notifications","🔔","Notifications"],["activity","📝","Activity"],["settings","⚙️","Settings"]];
+function tg(){try{return window.Telegram&&Telegram.WebApp?Telegram.WebApp:null}catch(e){return null}}function initTelegram(){const a=tg();if(!a)return;try{a.ready();a.expand()}catch(e){}}function auth(){const a=tg();return a?String(a.initData||""):""}function money(v){return"GH₵"+Number(v||0).toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2})}function num(v){return Number(v||0).toLocaleString("en-GH")}function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;")}function setStatus(t){document.getElementById("status").textContent=t}function errorBox(t){const e=document.getElementById("error");e.style.display="block";e.textContent=t}function clearError(){const e=document.getElementById("error");e.style.display="none";e.textContent=""}
+function badge(status,type){const s=String(status||"").toUpperCase();let c="blue";if(type==="payment"){if(s==="PAID")c="green";else if(s==="UNPAID")c="red";else if(s==="PARTIALLY PAID")c="amber";else if(s==="REFUNDED")c="purple"}else{if(s==="DELIVERED")c="green";else if(s==="CANCELLED")c="red";else if(s==="PENDING")c="amber";else if(s==="OUT FOR DELIVERY")c="purple"}return'<span class="badge '+c+'">'+esc(s||"-")+"</span>"}
+async function api(action,data={}){const init=auth();if(!init)throw new Error("This dashboard must be opened from the SWEET MART Admin Bot.");const response=await fetch("/api?action="+encodeURIComponent(action),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.assign({initData:init},data))});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw new Error(result.error||"Request failed.");return result.data}
+function closeBot(){const a=tg();if(a){try{a.close();return}catch(e){}}try{window.history.back()}catch(e){window.location.href="/"}}
+function buildNav(){const side=document.getElementById("sideNav"),mobile=document.getElementById("mobileNav");side.innerHTML="";mobile.innerHTML="";navItems.forEach(function(item){const[id,icon,label]=item;[side,mobile].forEach(function(nav){const b=document.createElement("button");b.type="button";b.dataset.page=id;b.innerHTML=icon+" "+label;b.addEventListener("click",function(){showPage(id)});nav.appendChild(b)})});updateNav()}
+function updateNav(){document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===currentPage));document.getElementById("pageTitle").textContent=navItems.find(x=>x[0]===currentPage)[2]}
+function showPage(id){currentPage=id;document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById("page-"+id).classList.add("active");updateNav();clearError();if(id==="dashboard")loadDashboard();if(id==="orders")loadOrders();if(id==="customers")loadCustomers();if(id==="products")loadProducts();if(id==="questions")loadQuestions();if(id==="faqs")loadFaqs();if(id==="notifications")loadNotifications();if(id==="activity")loadActivity();if(id==="settings")loadSettings()}
+function renderDashboard(d){
+  const s=d.summary||{};
+  const p=d.salesTrend||[];
+  const max=Math.max(1,...p.map(x=>Number(x.revenue||0)));
+  const trend=p.map(x=>`<div class="barcol"><div class="bar" style="height:${Math.max(3,Number(x.revenue||0)/max*100)}%"></div><div class="barlabel">${esc(String(x.date||"").slice(5))}</div></div>`).join("");
+  const parts=[["Pending",s.pendingOrders,"var(--amber)"],["Confirmed",s.confirmedOrders,"var(--blue)"],["Processing",s.processingOrders,"var(--purple)"],["Out for delivery",s.outForDeliveryOrders,"var(--purple)"],["Delivered",s.deliveredOrders,"var(--green)"],["Cancelled",s.cancelledOrders,"var(--red)"]];
+  const total=parts.reduce((a,b)=>a+Number(b[1]||0),0);
+  let angle=0;const segments=[];
+  parts.forEach(x=>{if(total){const next=angle+Number(x[1]||0)/total*360;segments.push(`${x[2]} ${angle}deg ${next}deg`);angle=next}});
+  const recent=(d.recentOrders||[]).map(o=>`<tr><td><strong>${esc(o.orderId)}</strong></td><td>${esc(o.customerName||o.customerId)}</td><td>${esc(o.productName)}</td><td>${money(o.totalAmount)}</td><td>${badge(o.orderStatus)}</td><td>${badge(o.paymentStatus,"payment")}</td><td>${esc(o.orderDate)}</td></tr>`).join("");
+  const top=(d.topProducts||[]).map(x=>`<div class="item"><div class="item-title">${esc(x.productName)}</div><div class="item-sub">${num(x.quantity)} units · ${money(x.revenue)} revenue</div><div class="item-sub">Profit: ${money(x.profit)}</div></div>`).join("");
+  const stock=(d.stockAlerts||[]).map(x=>`<div class="item"><div class="item-title">${esc(x.productName)}</div><div class="item-sub">${esc(x.category)}</div><div style="margin-top:7px">${badge("OUT OF STOCK")}</div></div>`).join("");
+  document.getElementById("page-dashboard").innerHTML=`
+    <div class="cards">
+      <div class="card blue-top"><div class="label">Revenue</div><div class="value">${money(s.totalRevenue)}</div><div class="sub">${num(s.totalSales)} sales</div></div>
+      <div class="card green-top"><div class="label">Profit</div><div class="value">${money(s.totalProfit)}</div><div class="sub">From recorded sales</div></div>
+      <div class="card amber-top"><div class="label">Orders</div><div class="value">${num(s.totalOrders)}</div><div class="sub">${num(s.pendingOrders)} pending</div></div>
+      <div class="card red-top"><div class="label">Customers</div><div class="value">${num(s.totalCustomers)}</div><div class="sub">${num(s.unansweredQuestions)} unanswered questions</div></div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="label">Products</div><div class="value">${num(s.totalProducts)}</div><div class="sub">${num(s.inStockProducts)} in stock · ${num(s.outOfStockProducts)} out</div></div>
+      <div class="card"><div class="label">Paid Orders</div><div class="value">${num(s.paidOrders)}</div><div class="sub">${num(s.unpaidOrders)} unpaid</div></div>
+      <div class="card"><div class="label">Delivery</div><div class="value">${num(s.outForDeliveryOrders)}</div><div class="sub">${num(s.deliveredOrders)} delivered</div></div>
+      <div class="card"><div class="label">FAQs</div><div class="value">${num(s.activeFaqs)}</div><div class="sub">${num(s.pendingNotifications)} pending notifications</div></div>
+    </div>
+    <div class="grid2">
+      <section class="panel"><div class="panel-head"><div class="panel-title">Revenue — last 14 days</div><div class="panel-meta">${money(p.reduce((a,b)=>a+Number(b.revenue||0),0))}</div></div><div class="panel-body"><div class="chart"><div class="bars">${trend}</div></div></div></section>
+      <section class="panel"><div class="panel-head"><div class="panel-title">Order status</div><div class="panel-meta">Current distribution</div></div><div class="panel-body"><div class="order-donut" style="background:${total?`conic-gradient(${segments.join(",")})`:"var(--border)"}"><div class="donut-center"><div class="donut-total">${num(total)}</div><div class="donut-sub">orders</div></div></div><div class="legend">${parts.map(x=>`<div class="legend-item"><span class="legend-dot" style="background:${x[2]}"></span>${esc(x[0])}: ${num(x[1])}</div>`).join("")}</div></div></section>
+    </div>
+    <section class="panel"><div class="panel-head"><div class="panel-title">Recent Orders</div><button class="btn small" id="dashOrdersBtn" type="button">View all</button></div><div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Product</th><th>Amount</th><th>Status</th><th>Payment</th><th>Date</th></tr></thead><tbody>${recent||'<tr><td colspan="7" class="empty">No orders yet.</td></tr>'}</tbody></table></div></section>
+    <div class="grid2">
+      <section class="panel"><div class="panel-head"><div class="panel-title">Top Products</div></div><div class="panel-body"><div class="list">${top||'<div class="empty">No sales data yet.</div>'}</div></div></section>
+      <section class="panel"><div class="panel-head"><div class="panel-title">Stock Alerts</div></div><div class="panel-body"><div class="list">${stock||'<div class="empty">No out-of-stock products.</div>'}</div></div></section>
+    </div>`;
+  document.getElementById("dashOrdersBtn").onclick=function(){showPage("orders")};
+}
 
-  function tg(){
+async function loadDashboard(){try{setStatus("Loading dashboard…");const d=await api("admin_dashboard");cache.dashboard=d;renderDashboard(d);setStatus("Dashboard updated.")}catch(e){errorBox(e.message);setStatus("Unable to load dashboard.")}}
+async function loadOrders(){document.getElementById("page-orders").innerHTML='<section class="panel"><div class="panel-head"><div class="panel-title">Orders</div><div class="panel-meta">Manage order and payment status</div></div><div class="panel-body"><div class="filters"><input id="orderSearch" class="input" placeholder="Search order, customer, phone or product"><select id="orderStatus" class="select"><option value="">All statuses</option><option>PENDING</option><option>CONFIRMED</option><option>PROCESSING</option><option>OUT FOR DELIVERY</option><option>DELIVERED</option><option>CANCELLED</option></select><select id="orderPayment" class="select"><option value="">All payments</option><option>UNPAID</option><option>PARTIALLY PAID</option><option>PAID</option><option>REFUNDED</option></select><input id="orderFrom" class="input" type="date"><input id="orderTo" class="input" type="date"><button id="orderFilterBtn" class="btn primary" type="button">Apply</button></div><div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Product</th><th>Qty</th><th>Amount</th><th>Status</th><th>Payment</th><th>Date</th><th>Action</th></tr></thead><tbody id="ordersBody"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody></table></div></div></section>';document.getElementById("orderFilterBtn").onclick=refreshOrders;await refreshOrders()}
+async function refreshOrders(){try{setStatus("Loading orders…");const d=await api("admin_orders",{search:document.getElementById("orderSearch").value,status:document.getElementById("orderStatus").value,paymentStatus:document.getElementById("orderPayment").value,fromDate:document.getElementById("orderFrom").value,toDate:document.getElementById("orderTo").value});cache.orders=d;renderOrders(d);setStatus("Orders updated.")}catch(e){errorBox(e.message);setStatus("Unable to load orders.")}}
+function renderOrders(items){const body=document.getElementById("ordersBody");if(!items||!items.length){body.innerHTML='<tr><td colspan="9" class="empty">No orders found.</td></tr>';return}body.innerHTML=items.map(o=>'<tr><td><strong>'+esc(o.orderId)+"</strong></td><td>"+esc(o.customerName||o.customerId)+"<div class=\"item-sub\">"+esc(o.customerPhone||"")+"</div></td><td>"+esc(o.productName)+"</td><td>"+num(o.quantity)+"</td><td><strong>"+money(o.totalAmount)+"</strong></td><td>"+badge(o.orderStatus)+"</td><td>"+badge(o.paymentStatus,"payment")+"</td><td>"+esc(o.orderDate)+"</td><td><button class=\"btn small\" data-order=\""+esc(o.orderId)+"\">Open</button></td></tr>").join("");body.querySelectorAll("button[data-order]").forEach(b=>b.addEventListener("click",function(){window.__orderDetail(this.dataset.order)}))}
+window.__orderDetail=async function(id){try{setStatus("Loading order…");const d=await api("admin_order_detail",{orderId:id});openModal("Order "+id,orderDetailHtml(d));setStatus("Order loaded.")}catch(e){errorBox(e.message)}};
+function orderDetailHtml(d){const o=d.order,c=d.customer;const html='<div class="detail-grid"><div class="detail"><div class="detail-label">Customer</div><div class="detail-value">'+esc(c.customerName||o.customerName)+"</div></div><div class=\"detail\"><div class=\"detail-label\">Phone</div><div class=\"detail-value\">"+esc(c.phoneNumber||o.customerPhone)+"</div></div><div class=\"detail\"><div class=\"detail-label\">Product</div><div class=\"detail-value\">"+esc(o.productName)+"</div></div><div class=\"detail\"><div class=\"detail-label\">Quantity</div><div class=\"detail-value\">"+num(o.quantity)+"</div></div><div class=\"detail\"><div class=\"detail-label\">Total</div><div class=\"detail-value\">"+money(o.totalAmount)+"</div></div><div class=\"detail\"><div class=\"detail-label\">Order status</div><div class=\"detail-value\">"+badge(o.orderStatus)+"</div></div><div class=\"detail\"><div class=\"detail-label\">Payment status</div><div class=\"detail-value\">"+badge(o.paymentStatus,"payment")+"</div></div><div class=\"detail\"><div class=\"detail-label\">Order date</div><div class=\"detail-value\">"+esc(o.orderDate)+"</div></div></div><div class=\"item\"><div class=\"item-title\">Delivery</div><div class=\"item-body\">"+esc(o.deliveryLocation||"Not provided")+"</div></div><div class=\"item\" style=\"margin-top:9px\"><div class=\"item-title\">Notes</div><div class=\"item-body\">"+esc(o.notes||"No notes")+"</div></div><section class=\"panel\" style=\"margin-top:12px;margin-bottom:0\"><div class=\"panel-head\"><div class=\"panel-title\">Order actions</div></div><div class=\"panel-body\"><div class=\"filters\"><select id=\"detailStatus\" class=\"select\"><option>PENDING</option><option>CONFIRMED</option><option>PROCESSING</option><option>OUT FOR DELIVERY</option><option>DELIVERED</option><option>CANCELLED</option></select><button class=\"btn primary\" id=\"saveStatusBtn\" type=\"button\">Update Status</button></div><div class=\"filters\"><select id=\"detailPayment\" class=\"select\"><option>UNPAID</option><option>PARTIALLY PAID</option><option>PAID</option><option>REFUNDED</option></select><input id=\"detailAmount\" class=\"input\" type=\"number\" min=\"0\" step=\"0.01\" placeholder=\"Payment amount\"><input id=\"detailMethod\" class=\"input\" placeholder=\"Payment method\"><input id=\"detailPayNote\" class=\"input\" placeholder=\"Payment note\"><button class=\"btn success\" id=\"savePaymentBtn\" type=\"button\">Update Payment</button></div></div></section><section class=\"panel\" style=\"margin-top:12px;margin-bottom:0\"><div class=\"panel-head\"><div class=\"panel-title\">Payment history</div></div><div class=\"panel-body\"><div class=\"list\">"+((d.payments||[]).map(p=>'<div class="item"><div class="item-title">'+money(p.amount)+" · "+esc(p.paymentStatus)+"</div><div class=\"item-sub\">"+esc(p.paymentMethod||"")+" · "+esc(p.date)+"</div><div class=\"item-body\">"+esc(p.notes||"")+"</div></div>").join("")||'<div class="empty">No payment records.</div>')+"</div></div></section><div class=\"item\" style=\"margin-top:12px\"><div class=\"item-title\">Sales records</div><div class=\"item-body\">"+((d.sales||[]).map(s=>esc(s.saleId)+" · "+money(s.revenue)+" revenue · "+money(s.profit)+" profit").join("<br>")||"No sales records.")+"</div></div>";setTimeout(function(){document.getElementById("detailStatus").value=o.orderStatus;document.getElementById("detailPayment").value=o.paymentStatus;document.getElementById("saveStatusBtn").onclick=async function(){try{this.disabled=true;const x=await api("admin_update_order_status",{orderId:o.orderId,status:document.getElementById("detailStatus").value});openModal("Order "+o.orderId,orderDetailHtml(x));await refreshOrders()}catch(e){errorBox(e.message)}};document.getElementById("savePaymentBtn").onclick=async function(){try{this.disabled=true;const x=await api("admin_update_payment",{orderId:o.orderId,paymentStatus:document.getElementById("detailPayment").value,amount:document.getElementById("detailAmount").value,paymentMethod:document.getElementById("detailMethod").value,notes:document.getElementById("detailPayNote").value});openModal("Order "+o.orderId,orderDetailHtml(x));await refreshOrders()}catch(e){errorBox(e.message)}}},10);return html}
+async function loadCustomers(){document.getElementById("page-customers").innerHTML='<section class="panel"><div class="panel-head"><div class="panel-title">Customers</div><div class="panel-meta">Customer records and history</div></div><div class="panel-body"><div class="filters"><input id="customerSearch" class="input" placeholder="Search name, phone, WhatsApp, location or email"><button id="customerFilterBtn" class="btn primary" type="button">Search</button></div><div class="table-wrap"><table><thead><tr><th>Customer</th><th>Phone</th><th>WhatsApp</th><th>Location</th><th>Email</th><th>Orders</th><th>Total Spent</th><th>Action</th></tr></thead><tbody id="customersBody"></tbody></table></div></div></section>';document.getElementById("customerFilterBtn").onclick=refreshCustomers;await refreshCustomers()}
+async function refreshCustomers(){try{setStatus("Loading customers…");const d=await api("admin_customers",{search:document.getElementById("customerSearch").value});cache.customers=d;const body=document.getElementById("customersBody");body.innerHTML=d.length?d.map(c=>'<tr><td><strong>'+esc(c.customerName)+"</strong><div class=\"item-sub\">"+esc(c.customerId)+"</div></td><td>"+esc(c.phoneNumber)+"</td><td>"+esc(c.whatsappNumber)+"</td><td>"+esc(c.location)+"</td><td>"+esc(c.email)+"</td><td>"+num(c.totalOrders)+"</td><td>"+money(c.totalSpent)+"</td><td><button class=\"btn small\" data-customer=\""+esc(c.customerId)+"\">Open</button></td></tr>").join(""): '<tr><td colspan="8" class="empty">No customers found.</td></tr>';body.querySelectorAll("button[data-customer]").forEach(b=>b.addEventListener("click",function(){window.__customerDetail(this.dataset.customer)}));setStatus("Customers updated.")}catch(e){errorBox(e.message)}}
+window.__customerDetail=async function(id){try{const d=await api("admin_customer_detail",{customerId:id});openModal("Customer "+id,'<div class="detail-grid">'+[["Name",d.customer.customerName],["Phone",d.customer.phoneNumber],["WhatsApp",d.customer.whatsappNumber],["Location",d.customer.location],["Email",d.customer.email],["Registered",d.customer.dateRegistered],["Orders",num(d.customer.totalOrders)],["Total Spent",money(d.customer.totalSpent)]].map(x=>'<div class="detail"><div class="detail-label">'+esc(x[0])+"</div><div class=\"detail-value\">"+esc(x[1])+"</div></div>").join("")+"</div><div class=\"item\"><div class=\"item-title\">Order history</div><div class=\"item-body\">"+((d.orders||[]).map(o=>esc(o.orderId)+" · "+esc(o.productName)+" · "+money(o.totalAmount)+" · "+esc(o.orderStatus)).join("<br>")||"No orders found.")+"</div></div>")}catch(e){errorBox(e.message)}};
+async function loadProducts(){document.getElementById("page-products").innerHTML='<section class="panel"><div class="panel-head"><div class="panel-title">Products</div><div class="panel-meta">Product and Jumia monitoring</div></div><div class="panel-body"><div class="filters"><input id="productSearch" class="input" placeholder="Search product or category"><button id="productFilterBtn" class="btn primary" type="button">Search</button></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Jumia Cost</th><th>Selling Price</th><th>Profit</th><th>Stock</th><th>Last Checked</th><th>Action</th></tr></thead><tbody id="productsBody"></tbody></table></div></div></section>';document.getElementById("productFilterBtn").onclick=refreshProducts;await refreshProducts()}
+async function refreshProducts(){try{setStatus("Loading products…");const d=await api("admin_products",{search:document.getElementById("productSearch").value});cache.products=d;document.getElementById("productsBody").innerHTML=d.length?d.map(p=>'<tr><td><strong>'+esc(p.productName)+"</strong><div class=\"item-sub\">"+esc(p.productId)+"</div></td><td>"+esc(p.category)+"</td><td>"+money(p.currentPrice)+"</td><td>"+money(p.sellingPrice)+"</td><td>"+money(p.actualProfit)+"</td><td>"+(p.stockStatus.indexOf("OUT")>=0?badge("OUT OF STOCK"):badge("IN STOCK","x"))+"</td><td>"+esc(p.lastChecked)+"</td><td><div class=\"actions\"><button class=\"btn small\" data-product-detail=\""+esc(p.productId)+"\">Open</button><button class=\"btn small\" data-product-refresh=\""+esc(p.productId)+"\">↻ Jumia</button></div></td></tr>").join(""):'<tr><td colspan="8" class="empty">No products found.</td></tr>';document.querySelectorAll("button[data-product-detail]").forEach(b=>b.addEventListener("click",function(){window.__productDetail(this.dataset.productDetail)}));document.querySelectorAll("button[data-product-refresh]").forEach(b=>b.addEventListener("click",function(){window.__refreshProduct(this.dataset.productRefresh)}));setStatus("Products updated.")}catch(e){errorBox(e.message)}}
+window.__productDetail=function(id){const p=cache.products.find(x=>x.productId===id);if(!p)return;openModal(p.productName,'<div class="detail-grid">'+[["Category",p.category],["Jumia Cost",money(p.currentPrice)],["Selling Price",money(p.sellingPrice)],["Actual Profit",money(p.actualProfit)],["Profit Type",p.profitType],["Profit Value",money(p.profitValue)],["Shipping Fee",money(p.shippingFee)],["Lorry Fare",money(p.lorryFare)],["Stock",p.stockStatus],["Last Checked",p.lastChecked]].map(x=>'<div class="detail"><div class="detail-label">'+esc(x[0])+"</div><div class=\"detail-value\">"+esc(x[1])+"</div></div>").join("")+"</div><div class=\"item\"><div class=\"item-title\">Notes</div><div class=\"item-body\">"+esc(p.notes||"No notes")+"</div></div>"+(p.jumiaUrl?'<div style="margin-top:10px"><a class="btn" href="'+esc(p.jumiaUrl)+'" target="_blank" rel="noopener">Open Jumia</a></div>':""))};
+window.__refreshProduct=async function(id){try{setStatus("Refreshing product from Jumia…");await api("admin_refresh_product",{productId:id});await refreshProducts();setStatus("Product refreshed.")}catch(e){errorBox(e.message);setStatus("Unable to refresh product.")}};
+async function loadQuestions(){document.getElementById("page-questions").innerHTML='<section class="panel"><div class="panel-head"><div class="panel-title">Customer Questions</div><div class="panel-meta">Reply, resolve and save FAQs</div></div><div class="panel-body"><div class="filters"><input id="questionSearch" class="input" placeholder="Search question, customer or product"><select id="questionStatus" class="select"><option value="">All</option><option>UNANSWERED</option><option>ANSWERED</option></select><button id="questionFilterBtn" class="btn primary" type="button">Apply</button></div><div id="questionList" class="list"></div></div></section>';document.getElementById("questionFilterBtn").onclick=refreshQuestions;await refreshQuestions()}
+async function refreshQuestions(){try{setStatus("Loading questions…");const d=await api("admin_questions",{search:document.getElementById("questionSearch").value,status:document.getElementById("questionStatus").value});cache.questions=d;document.getElementById("questionList").innerHTML=d.length?d.map(q=>'<div class="item"><div class="item-title">'+esc(q.customerName||"Customer")+" "+badge(q.status)+"</div><div class=\"item-sub\">"+esc(q.productName||"No selected product")+" · "+esc(q.date)+" · "+esc(q.questionId)+"</div><div class=\"item-body\">"+esc(q.question)+"</div><div class=\"actions\" style=\"margin-top:8px\"><button class=\"btn small\" data-question=\""+esc(q.questionId)+"\">Reply</button></div></div>").join(""):'<div class="empty">No customer questions found.</div>';document.querySelectorAll("button[data-question]").forEach(b=>b.addEventListener("click",function(){window.__questionReply(this.dataset.question)}));setStatus("Questions updated.")}catch(e){errorBox(e.message)}}
+window.__questionReply=function(id){
+  const q=cache.questions.find(x=>x.questionId===id);if(!q)return;
+  const html=`<div class="item"><div class="item-title">${esc(q.customerName||"Customer")}</div><div class="item-sub">${esc(q.productName||"")}</div><div class="item-body">${esc(q.question)}</div></div><div style="margin-top:12px"><textarea id="replyText" class="textarea" placeholder="Type your reply…"></textarea><label style="display:flex;gap:8px;align-items:center;margin-top:9px;font-size:12px"><input id="replyFaq" type="checkbox"> Save this answer as an FAQ</label><button id="sendReplyBtn" class="btn primary" style="margin-top:10px" type="button">Send Reply</button></div>`;
+  openModal("Reply to "+id,html);
+  document.getElementById("sendReplyBtn").onclick=async function(){
     try{
-      return window.Telegram && Telegram.WebApp ? Telegram.WebApp : null;
-    }catch(e){ return null; }
+      const ans=document.getElementById("replyText").value.trim();
+      if(!ans){errorBox("Reply cannot be empty.");return}
+      this.disabled=true;
+      await api("admin_reply_question",{questionId:id,answer:ans,saveAsFaq:document.getElementById("replyFaq").checked});
+      closeModal();await refreshQuestions();
+    }catch(e){errorBox(e.message);this.disabled=false}
   }
-
-  function setupTelegram(){
-    const app = tg();
-    if(!app) return;
-    try{ app.ready(); app.expand(); }catch(e){}
-  }
-
-  function money(n){
-    const value = Number(n || 0);
-    return "GH₵" + value.toLocaleString("en-GH", {minimumFractionDigits:2, maximumFractionDigits:2});
-  }
-
-  function number(n){
-    return Number(n || 0).toLocaleString("en-GH");
-  }
-
-  function escapeHtml(value){
-    return String(value == null ? "" : value)
-      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
-  }
-
-  function badge(status, type){
-    const raw = String(status || "").toUpperCase();
-    let cls = "blue";
-    if(type === "payment"){
-      if(raw === "PAID") cls = "green";
-      else if(raw === "UNPAID") cls = "red";
-      else if(raw === "PARTIALLY PAID") cls = "amber";
-      else if(raw === "REFUNDED") cls = "purple";
-    }else{
-      if(raw === "DELIVERED") cls = "green";
-      else if(raw === "CANCELLED") cls = "red";
-      else if(raw === "PENDING") cls = "amber";
-      else if(raw === "OUT FOR DELIVERY") cls = "purple";
-      else if(raw === "PROCESSING" || raw === "CONFIRMED") cls = "blue";
-    }
-    return '<span class="badge '+cls+'">'+escapeHtml(raw || "-")+'</span>';
-  }
-
-  function telegramAuthData(){
-    const app = tg();
-    return app ? String(app.initData || "") : "";
-  }
-
-  function showError(message){
-    const box = document.getElementById("errorBox");
-    box.style.display = "block";
-    box.textContent = message;
-  }
-
-  function clearError(){
-    const box = document.getElementById("errorBox");
-    box.style.display = "none";
-    box.textContent = "";
-  }
-
-  function renderTrend(rows){
-    const container = document.getElementById("salesChart");
-    container.innerHTML = "";
-    const values = (rows || []).map(x => Number(x.revenue || 0));
-    const max = Math.max(1, ...values);
-    const total = values.reduce((s,v)=>s+v,0);
-    document.getElementById("trendTotal").textContent = money(total);
-
-    const grid = document.createElement("div");
-    grid.className = "chart-line";
-    [0,1,2,3].forEach(()=>{ const g=document.createElement("div"); g.className="grid-line"; grid.appendChild(g); });
-    container.appendChild(grid);
-
-    const bars = document.createElement("div");
-    bars.className = "bars";
-    (rows || []).forEach(function(item){
-      const col=document.createElement("div"); col.className="bar-col";
-      const bar=document.createElement("div"); bar.className="bar";
-      bar.style.height=Math.max(3,(Number(item.revenue||0)/max)*100)+"%";
-      bar.title=(item.date||"")+" — "+money(item.revenue);
-      const label=document.createElement("div"); label.className="bar-label";
-      label.textContent=String(item.date||"").slice(5);
-      col.appendChild(bar); col.appendChild(label); bars.appendChild(col);
-    });
-    container.appendChild(bars);
-  }
-
-  function renderOrderStatus(summary){
-    const parts=[
-      ["Pending",Number(summary.pendingOrders||0),"var(--amber)"],
-      ["Confirmed",Number(summary.confirmedOrders||0),"var(--blue)"],
-      ["Processing",Number(summary.processingOrders||0),"var(--purple)"],
-      ["Out for delivery",Number(summary.outForDeliveryOrders||0),"var(--purple)"],
-      ["Delivered",Number(summary.deliveredOrders||0),"var(--green)"],
-      ["Cancelled",Number(summary.cancelledOrders||0),"var(--red)"]
-    ];
-    const total=parts.reduce((s,p)=>s+p[1],0);
-    const gradientParts=[]; let angle=0;
-    parts.forEach(function(p){
-      if(total<=0) return;
-      const next=angle+(p[1]/total)*360;
-      gradientParts.push(p[2]+" "+angle+"deg "+next+"deg");
-      angle=next;
-    });
-    const donut=document.getElementById("orderDonut");
-    donut.style.background = total ? "conic-gradient("+gradientParts.join(",")+")" : "var(--border)";
-    document.getElementById("orderDonutValue").textContent=number(total);
-    const legend=document.getElementById("orderLegend"); legend.innerHTML="";
-    parts.forEach(function(p){
-      const item=document.createElement("div"); item.className="legend-item";
-      item.innerHTML='<span class="dot" style="background:'+p[2]+'"></span>'+escapeHtml(p[0])+': '+number(p[1]);
-      legend.appendChild(item);
-    });
-  }
-
-  function renderOrders(items){
-    const body=document.getElementById("ordersBody"); body.innerHTML="";
-    if(!items || !items.length){ body.innerHTML='<tr><td colspan="8" class="empty">No orders yet.</td></tr>'; return; }
-    items.forEach(function(o){
-      const tr=document.createElement("tr");
-      tr.innerHTML=
-        '<td><strong>'+escapeHtml(o.orderId)+'</strong></td>'+
-        '<td>'+escapeHtml(o.customerId || "-")+'</td>'+
-        '<td>'+escapeHtml(o.productName || "-")+'<div class="muted">Qty: '+number(o.quantity)+'</div></td>'+
-        '<td><strong>'+money(o.totalAmount)+'</strong></td>'+
-        '<td>'+badge(o.orderStatus)+ '</td>'+
-        '<td>'+badge(o.paymentStatus,"payment")+'</td>'+
-        '<td>'+escapeHtml(o.orderDate || "-")+'</td>'+
-        '<td>'+escapeHtml(o.deliveryLocation || "-")+'</td>';
-      body.appendChild(tr);
-    });
-  }
-
-  function renderSales(items){
-    const body=document.getElementById("salesBody"); body.innerHTML="";
-    if(!items || !items.length){ body.innerHTML='<tr><td colspan="7" class="empty">No recorded sales yet.</td></tr>'; return; }
-    items.forEach(function(s){
-      const tr=document.createElement("tr");
-      tr.innerHTML=
-        '<td><strong>'+escapeHtml(s.saleId)+'</strong></td>'+
-        '<td>'+escapeHtml(s.orderId || "-")+'</td>'+
-        '<td>'+escapeHtml(s.productName || "-")+'</td>'+
-        '<td><strong>'+money(s.revenue)+'</strong></td>'+
-        '<td>'+money(s.profit)+'</td>'+
-        '<td>'+escapeHtml(s.paymentMethod || "-")+'</td>'+
-        '<td>'+escapeHtml(s.saleDate || "-")+'</td>';
-      body.appendChild(tr);
-    });
-  }
-
-  function renderList(containerId, items, renderer, emptyText){
-    const node=document.getElementById(containerId); node.innerHTML="";
-    if(!items || !items.length){ node.innerHTML='<div class="empty">'+escapeHtml(emptyText)+'</div>'; return; }
-    items.forEach(function(item){ node.insertAdjacentHTML("beforeend",renderer(item)); });
-  }
-
-  function renderData(data){
-    const s=data.summary || {};
-    document.getElementById("totalRevenue").textContent=money(s.totalRevenue);
-    document.getElementById("totalSales").textContent=number(s.totalSales)+" sales";
-    document.getElementById("totalProfit").textContent=money(s.totalProfit);
-    document.getElementById("totalOrders").textContent=number(s.totalOrders);
-    document.getElementById("pendingOrders").textContent=number(s.pendingOrders)+" pending";
-    document.getElementById("totalCustomers").textContent=number(s.totalCustomers);
-    document.getElementById("questionsCount").textContent=number(s.unansweredQuestions)+" unanswered questions";
-    document.getElementById("totalProducts").textContent=number(s.totalProducts);
-    document.getElementById("stockSummary").textContent=number(s.inStockProducts)+" in stock · "+number(s.outOfStockProducts)+" out";
-    document.getElementById("paidOrders").textContent=number(s.paidOrders);
-    document.getElementById("unpaidOrders").textContent=number(s.unpaidOrders)+" unpaid";
-    document.getElementById("outForDelivery").textContent=number(s.outForDeliveryOrders);
-    document.getElementById("deliveredOrders").textContent=number(s.deliveredOrders)+" delivered";
-    document.getElementById("activeFaqs").textContent=number(s.activeFaqs);
-    document.getElementById("notificationsCount").textContent=number(s.pendingNotifications)+" pending notifications";
-
-    renderTrend(data.salesTrend || []);
-    renderOrderStatus(s);
-    renderOrders(data.recentOrders || []);
-    renderSales(data.recentSales || []);
-
-    renderList("topProducts", data.topProducts || [], function(p){
-      return '<div class="list-item"><div class="list-title">'+escapeHtml(p.productName||"-")+'</div><div class="list-small">'+number(p.quantity)+' units · '+money(p.revenue)+' revenue</div><div class="list-small">Profit: '+money(p.profit)+'</div></div>';
-    }, "No sales data yet.");
-
-    renderList("stockAlerts", data.stockAlerts || [], function(p){
-      return '<div class="list-item"><div class="list-title">'+escapeHtml(p.productName||"-")+'</div><div class="list-small">'+escapeHtml(p.category||"-")+'</div><div style="margin-top:7px">'+badge("OUT OF STOCK")+'</div></div>';
-    }, "No out-of-stock products.");
-
-    renderList("questionsList", data.recentQuestions || [], function(q){
-      return '<div class="list-item"><div class="list-title">'+escapeHtml(q.productName || q.customerName || "Customer question")+'</div><div class="list-small">'+escapeHtml(q.date||"")+' · '+badge(q.status)+'</div><div class="question">'+escapeHtml(q.question||"")+'</div></div>';
-    }, "No customer questions.");
-
-    renderList("activityList", data.recentActivity || [], function(a){
-      return '<div class="list-item"><div class="list-title">'+escapeHtml(a.action||"Activity")+'</div><div class="list-small">'+escapeHtml(a.date||"")+' · '+escapeHtml(a.user||"System")+'</div><div class="question">'+escapeHtml(a.details||"")+'</div></div>';
-    }, "No admin activity yet.");
-
-    document.getElementById("footerNote").textContent="Last updated: "+String(data.generatedAt || "-");
-  }
-
-  async function loadDashboard(){
-    clearError();
-    const status=document.getElementById("statusLine");
-    status.textContent="Loading business data…";
-    const auth=telegramAuthData();
-    if(!auth){
-      showError("This dashboard must be opened from the SWEET MART Admin Bot using the Open Admin Dashboard button.");
-      status.textContent="Waiting for Telegram authentication.";
-      return;
-    }
-    try{
-      const response=await fetch("/api?action=admin_dashboard",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({initData:auth})
-      });
-      const result=await response.json();
-      if(!response.ok || !result.success){ throw new Error(result.error || "Dashboard data could not be loaded."); }
-      renderData(result.data || {});
-      status.textContent="Business data loaded successfully.";
-      document.getElementById("dashboardContent").classList.remove("loading");
-    }catch(error){
-      console.error(error);
-      status.textContent="Unable to load dashboard.";
-      showError(error && error.message ? error.message : "Unable to load dashboard data.");
-    }
-  }
-
-  function closeToBot(){
-    const app=tg();
-    if(app){ try{ app.close(); return; }catch(e){} }
-    try{ window.history.back(); }catch(e){ window.location.href="/"; }
-  }
-
-  document.getElementById("refreshBtn").addEventListener("click", loadDashboard);
-  document.getElementById("closeBtn").addEventListener("click", closeToBot);
-  setupTelegram();
-  if(!initialized){ initialized=true; loadDashboard(); }
+};
+async function loadFaqs(){document.getElementById("page-faqs").innerHTML='<section class="panel"><div class="panel-head"><div class="panel-title">FAQ Management</div><div class="panel-meta">Control automatic customer answers</div></div><div class="panel-body"><div class="filters"><input id="faqSearch" class="input" placeholder="Search FAQ"><button id="faqFilterBtn" class="btn primary" type="button">Search</button></div><div id="faqList" class="list"></div></div></section>';document.getElementById("faqFilterBtn").onclick=refreshFaqs;await refreshFaqs()}
+async function refreshFaqs(){try{setStatus("Loading FAQs…");const d=await api("admin_faqs",{search:document.getElementById("faqSearch").value});cache.faqs=d;document.getElementById("faqList").innerHTML=d.length?d.map(f=>'<div class="item"><div class="item-title">'+esc(f.faqId)+" "+badge(f.status)+"</div><div class=\"item-sub\">Keywords: "+esc(f.keywords)+"</div><div class=\"item-body\">"+esc(f.answer)+"</div><div class=\"actions\" style=\"margin-top:8px\"><button class=\"btn small\" data-faq=\""+esc(f.faqId)+"\">Edit</button></div></div>").join(""):'<div class="empty">No FAQs found.</div>';document.querySelectorAll("button[data-faq]").forEach(b=>b.addEventListener("click",function(){window.__editFaq(this.dataset.faq)}));setStatus("FAQs updated.")}catch(e){errorBox(e.message)}}
+window.__editFaq=function(id){
+  const f=cache.faqs.find(x=>x.faqId===id);if(!f)return;
+  const html=`<textarea id="faqAnswer" class="textarea">${esc(f.answer)}</textarea><select id="faqStatus" class="select" style="margin-top:8px"><option>ACTIVE</option><option>INACTIVE</option></select><button id="faqSaveBtn" class="btn primary" style="margin-top:10px" type="button">Save</button>`;
+  openModal("Edit "+id,html);
+  document.getElementById("faqStatus").value=f.status;
+  document.getElementById("faqSaveBtn").onclick=async function(){
+    try{this.disabled=true;await api("admin_update_faq",{faqId:id,answer:document.getElementById("faqAnswer").value,status:document.getElementById("faqStatus").value});closeModal();await refreshFaqs()}catch(e){errorBox(e.message);this.disabled=false}
+  };
+};
+async function loadNotifications(){document.getElementById("page-notifications").innerHTML='<section class="panel"><div class="panel-head"><div class="panel-title">Notifications</div><button id="resendBtn" class="btn small" type="button">↻ Process Pending</button></div><div class="panel-body"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Type</th><th>Product</th><th>Message</th><th>Date</th><th>Status</th></tr></thead><tbody id="notificationsBody"></tbody></table></div></div></section>';document.getElementById("resendBtn").onclick=async function(){try{this.disabled=true;await api("admin_resend_notifications",{});await refreshNotifications()}catch(e){errorBox(e.message)}finally{this.disabled=false}};await refreshNotifications()}
+async function refreshNotifications(){try{setStatus("Loading notifications…");const d=await api("admin_notifications");cache.notifications=d;document.getElementById("notificationsBody").innerHTML=d.length?d.map(n=>'<tr><td>'+esc(n.notificationId)+"</td><td>"+esc(n.type)+"</td><td>"+esc(n.productName)+"</td><td>"+esc(n.message)+"</td><td>"+esc(n.date)+"</td><td>"+badge(n.status)+"</td></tr>").join(""):'<tr><td colspan="6" class="empty">No notifications.</td></tr>';setStatus("Notifications updated.")}catch(e){errorBox(e.message)}}
+async function loadActivity(){document.getElementById("page-activity").innerHTML='<section class="panel"><div class="panel-head"><div class="panel-title">Admin Activity</div><div class="panel-meta">Audit log</div></div><div class="panel-body"><div id="activityList" class="list"></div></div></section>';await refreshActivity()}
+async function refreshActivity(){try{setStatus("Loading activity…");const d=await api("admin_activity");cache.activity=d;document.getElementById("activityList").innerHTML=d.length?d.map(a=>'<div class="item"><div class="item-title">'+esc(a.action)+" "+badge(a.status)+"</div><div class=\"item-sub\">"+esc(a.date)+" · "+esc(a.user)+"</div><div class=\"item-body\">"+esc(a.details)+"</div></div>").join(""):'<div class="empty">No activity found.</div>';setStatus("Activity updated.")}catch(e){errorBox(e.message)}}
+async function loadSettings(){try{setStatus("Loading settings…");const d=await api("admin_settings");document.getElementById("page-settings").innerHTML='<section class="panel"><div class="panel-head"><div class="panel-title">System Settings</div><div class="panel-meta">Non-secret configuration</div></div><div class="panel-body"><div class="detail-grid">'+[["App",d.app],["Spreadsheet",d.spreadsheetName],["Customer Mini App",d.miniAppUrl],["Admin Dashboard",d.adminDashboardUrl],["Admin Chat",d.adminChatId],["Customer Bot",d.customerBotConfigured?"Configured":"Not configured"],["Admin Bot",d.adminBotConfigured?"Configured":"Not configured"],["Parse",d.parseConfigured?"Configured":"Not configured"],["Reef API",d.reefConfigured?"Configured":"Not configured"]].map(x=>'<div class="detail"><div class="detail-label">'+esc(x[0])+"</div><div class=\"detail-value\">"+esc(x[1])+"</div></div>").join("")+"</div><div class=\"item\"><div class=\"item-title\">Settings sheet</div><div class=\"item-body\">"+((d.settings||[]).map(x=>'<div><strong>'+esc(x.key)+":</strong> "+esc(x.value)+"</div>").join("")||"No settings rows.")+"</div></div></div></section>";setStatus("Settings loaded.")}catch(e){errorBox(e.message);setStatus("Unable to load settings.")}}
+function openModal(title,html){document.getElementById("modalTitle").textContent=title;document.getElementById("modalBody").innerHTML=html||"";document.getElementById("modal").classList.add("open")}function closeModal(){document.getElementById("modal").classList.remove("open");document.getElementById("modalBody").innerHTML=""}document.getElementById("modalClose").onclick=closeModal;document.getElementById("modal").addEventListener("click",function(e){if(e.target===this)closeModal()});document.getElementById("refreshBtn").onclick=function(){clearError();if(currentPage==="dashboard")loadDashboard();else if(currentPage==="orders")loadOrders();else if(currentPage==="customers")loadCustomers();else if(currentPage==="products")loadProducts();else if(currentPage==="questions")loadQuestions();else if(currentPage==="faqs")loadFaqs();else if(currentPage==="notifications")loadNotifications();else if(currentPage==="activity")loadActivity();else loadSettings()};document.getElementById("closeBtn").onclick=closeBot;initTelegram();if(!initialized){initialized=true;buildNav();loadDashboard()}
 })();
 </script>
 </body>
