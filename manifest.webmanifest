@@ -1,0 +1,18 @@
+{
+  "name": "SWEET MART Admin",
+  "short_name": "SWEET MART",
+  "start_url": "/admin.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0b5ed7",
+  "description": "SWEET MART business control center",
+  "icons": [
+    {
+      "src": "/sweet-mart-admin-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
