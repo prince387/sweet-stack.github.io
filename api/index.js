@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=());
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
 
   if (req.method === "OPTIONS") {
     return res.status(204).end();
