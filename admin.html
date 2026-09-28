@@ -99,14 +99,19 @@ function invalidateApiMemory(){Object.keys(apiMemoryCache).forEach(k=>delete api
 const V7_MUTATIONS=new Set(["admin_update_order_status","admin_update_payment","admin_reply_question","admin_update_faq","admin_resend_notifications","admin_reset_browser_password","admin_send_message","admin_mark_messages_read","admin_update_customer","admin_create_followup","admin_complete_followup","admin_save_staff","admin_delete_staff","admin_upload_logo","admin_remove_logo","admin_logout_all","admin_run_automations","admin_mark_order_seen"]);
 const V7_LABELS={admin_update_order_status:"Order status updated.",admin_update_payment:"Payment updated.",admin_reply_question:"Customer reply sent.",admin_update_faq:"FAQ updated.",admin_resend_notifications:"Notifications processed.",admin_reset_browser_password:"Browser password updated.",admin_send_message:"Message sent to customer.",admin_mark_messages_read:"Messages marked as read.",admin_update_customer:"Customer updated.",admin_create_followup:"Follow-up created.",admin_complete_followup:"Follow-up completed.",admin_save_staff:"Staff account saved.",admin_delete_staff:"Staff account deleted.",admin_upload_logo:"Dashboard logo updated.",admin_remove_logo:"Dashboard logo removed.",admin_logout_all:"Browser sessions revoked.",admin_run_automations:"Automations completed.",admin_mark_order_seen:"Order marked as seen."};
 function persistentKey(action,data){return "smAdminV7Cache::"+apiCacheKey(action,data)}
-function loadPersistent(action,data){try{const raw=localStorage.getItem(persistentKey(action,data));if(!raw)return null;const obj=JSON.parse(raw);return obj&&obj.data!==undefined?obj.data:null}catch(e){return null}}
-function savePersistent(action,data,value){try{const raw=JSON.stringify({savedAt:Date.now(),data:value});if(raw.length<=1500000)localStorage.setItem(persistentKey(action,data),raw)}catch(e){}}
-function loadOfflineQueue(){try{const raw=localStorage.getItem("smAdminV7OfflineQueue");return raw?JSON.parse(raw):[]}catch(e){return[]}}
-function saveOfflineQueue(q){try{localStorage.setItem("smAdminV7OfflineQueue",JSON.stringify(q.slice(-100)))}catch(e){}}
-function queueMutation(action,data){const q=loadOfflineQueue();const item={id:"Q-"+Date.now()+"-"+Math.random().toString(16).slice(2),action:action,data:data||{},createdAt:Date.now()};q.push(item);saveOfflineQueue(q);return item}
+const SM_IDB_NAME="sweetMartAdminOfflineV2",SM_IDB_STORE="cache";
+let smIdbPromise=null;
+function openOfflineDb(){if(!("indexedDB" in window))return Promise.resolve(null);if(smIdbPromise)return smIdbPromise;smIdbPromise=new Promise(function(resolve){try{const req=indexedDB.open(SM_IDB_NAME,1);req.onupgradeneeded=function(){try{req.result.createObjectStore(SM_IDB_STORE)}catch(e){}};req.onsuccess=function(){resolve(req.result)};req.onerror=function(){resolve(null)}}catch(e){resolve(null)}});return smIdbPromise}
+function idbGet(key){return openOfflineDb().then(function(db){return new Promise(function(resolve){if(!db)return resolve(null);try{const tx=db.transaction(SM_IDB_STORE,"readonly"),req=tx.objectStore(SM_IDB_STORE).get(key);req.onsuccess=function(){resolve(req.result===undefined?null:req.result)};req.onerror=function(){resolve(null)}}catch(e){resolve(null)}})})}
+function idbPut(key,value){return openOfflineDb().then(function(db){return new Promise(function(resolve){if(!db)return resolve(false);try{const tx=db.transaction(SM_IDB_STORE,"readwrite");tx.objectStore(SM_IDB_STORE).put(value,key);tx.oncomplete=function(){resolve(true)};tx.onerror=function(){resolve(false)};tx.onabort=function(){resolve(false)}}catch(e){resolve(false)}})})}
+async function loadPersistent(action,data){const key=persistentKey(action,data);try{const obj=await idbGet("cache:"+key);if(obj&&obj.data!==undefined)return obj.data}catch(e){}try{const raw=localStorage.getItem(key);if(raw){const obj=JSON.parse(raw);if(obj&&obj.data!==undefined){await idbPut("cache:"+key,obj);return obj.data}}}catch(e){}return null}
+async function savePersistent(action,data,value){const key=persistentKey(action,data);const obj={savedAt:Date.now(),data:value};if(await idbPut("cache:"+key,obj))return;try{const raw=JSON.stringify(obj);if(raw.length<=4000000)localStorage.setItem(key,raw)}catch(e){}}
+async function loadOfflineQueue(){try{const q=await idbGet("offlineQueue");if(Array.isArray(q))return q}catch(e){}try{const raw=localStorage.getItem("smAdminV7OfflineQueue");return raw?JSON.parse(raw):[]}catch(e){return[]}}
+async function saveOfflineQueue(q){const safe=q.slice(-200);if(await idbPut("offlineQueue",safe))return;try{localStorage.setItem("smAdminV7OfflineQueue",JSON.stringify(safe))}catch(e){}}
+async function queueMutation(action,data){const q=await loadOfflineQueue();const item={id:"Q-"+Date.now()+"-"+Math.random().toString(16).slice(2),action:action,data:data||{},createdAt:Date.now()};q.push(item);await saveOfflineQueue(q);return item}
 function toast(message,type){const stack=document.getElementById("toastStack");if(!stack)return;const el=document.createElement("div");el.className="toast "+(type||"success");el.textContent=message;stack.appendChild(el);setTimeout(function(){el.remove()},3600)}
 function syncConnectionState(){const b=document.getElementById("offlineBanner");if(b)b.classList.toggle("show",!navigator.onLine)}
-async function flushOfflineQueue(){if(!navigator.onLine)return;const q=loadOfflineQueue();if(!q.length)return;const remaining=[];for(const item of q){try{await api(item.action,item.data,{force:true,skipQueue:true,silentToast:true});toast((V7_LABELS[item.action]||"Offline change synchronized.")+"","success")}catch(e){remaining.push(item);break}}saveOfflineQueue(remaining);if(!remaining.length)toast("All offline changes have been synchronized.","info")}
+async function flushOfflineQueue(){if(!navigator.onLine)return;const q=await loadOfflineQueue();if(!q.length)return;const remaining=[];for(const item of q){try{await api(item.action,item.data,{force:true,skipQueue:true,silentToast:true});toast((V7_LABELS[item.action]||"Offline change synchronized.")+"","success")}catch(e){remaining.push(item);break}}await saveOfflineQueue(remaining);if(!remaining.length)toast("All offline changes have been synchronized.","info")}
 async function api(action,data={},options={}){
   const payload=Object.assign({},data);
   const init=auth();const session=getSession();
@@ -115,9 +120,9 @@ async function api(action,data={},options={}){
   if(!options.force&&ttl&&apiMemoryCache[key]&&Date.now()-apiMemoryCache[key].time<ttl)return apiMemoryCache[key].data;
   if(!options.force&&apiInflight[key])return apiInflight[key];
   if(!navigator.onLine&&!options.skipQueue){
-    const cached=loadPersistent(action,data);
+    const cached=await loadPersistent(action,data);
     if(cached!==null&&!V7_MUTATIONS.has(action))return cached;
-    if(V7_MUTATIONS.has(action)){queueMutation(action,data);toast("Saved offline. It will sync automatically when you reconnect.","info");return{queued:true,offline:true};}
+    if(V7_MUTATIONS.has(action)){await queueMutation(action,data);toast("Saved offline. It will sync automatically when you reconnect.","info");return{queued:true,offline:true};}
     throw new Error("You are offline and no saved data is available for this section.");
   }
   const request=(async()=>{
@@ -128,12 +133,12 @@ async function api(action,data={},options={}){
       if(!response.ok||!result.success)throw new Error(result.error||"Request failed.");
       const out=result.data;
       if(ttl)apiMemoryCache[key]={time:Date.now(),data:out};
-      if(!V7_MUTATIONS.has(action))savePersistent(action,data,out);
+      if(!V7_MUTATIONS.has(action))await savePersistent(action,data,out);
       else{invalidateApiMemory();if(V7_LABELS[action]&&!options.silentToast)toast(V7_LABELS[action],"success");}
       return out;
     }catch(e){
-      if(V7_MUTATIONS.has(action)&&!options.skipQueue){queueMutation(action,data);toast("Connection lost. Change saved offline and will sync automatically.","info");return{queued:true,offline:true};}
-      if(!V7_MUTATIONS.has(action)){const cached=loadPersistent(action,data);if(cached!==null)return cached;}
+      if(V7_MUTATIONS.has(action)&&!options.skipQueue){await queueMutation(action,data);toast("Connection lost. Change saved offline and will sync automatically.","info");return{queued:true,offline:true};}
+      if(!V7_MUTATIONS.has(action)){const cached=await loadPersistent(action,data);if(cached!==null)return cached;}
       throw e;
     }
   })();
@@ -335,13 +340,22 @@ document.getElementById("removeLogoBtn").onclick=async function(){try{this.disab
 function openModal(title,html){document.getElementById("modalTitle").textContent=title;document.getElementById("modalBody").innerHTML=html||"";document.getElementById("modal").classList.add("open")}function closeModal(){clearChatTimer();chatCustomerId="";chatOrderId="";document.getElementById("modal").classList.remove("open");document.getElementById("modalBody").innerHTML=""}document.getElementById("modalClose").onclick=closeModal;document.getElementById("modal").addEventListener("click",function(e){if(e.target===this)closeModal()});document.getElementById("refreshBtn").onclick=function(){clearError();refreshPageData(currentPage,true)};document.getElementById("closeBtn").onclick=closeBot;document.getElementById("loginForm").addEventListener("submit",function(e){e.preventDefault();loginDirect(document.getElementById("loginUsername").value.trim(),document.getElementById("loginPassword").value)});
 
 function prefetchAdminData(){
-  Promise.all([
+  const jobs=[
     api("admin_orders",{}),
     api("admin_customers",{}),
     api("admin_products",{}),
     api("admin_questions",{status:"UNANSWERED"}),
-    api("admin_faqs",{})
-  ]).catch(()=>{});
+    api("admin_faqs",{}),
+    api("admin_notifications",{}),
+    api("admin_activity",{}),
+    api("admin_settings",{}),
+    api("admin_inventory",{}),
+    api("admin_followups",{}),
+    api("admin_staff",{}),
+    api("admin_reports",{}),
+    api("admin_messages",{})
+  ];
+  Promise.allSettled(jobs).catch(()=>{});
 }
 
 document.getElementById("globalSearch").addEventListener("keydown",function(e){if(e.key==="Enter"){const q=this.value.trim();if(q)runGlobalSearch(q)}});let globalSearchTimer=null;document.getElementById("globalSearch").addEventListener("input",function(){clearTimeout(globalSearchTimer);const q=this.value.trim();if(q.length<3)return;globalSearchTimer=setTimeout(function(){runGlobalSearch(q)},500)});
