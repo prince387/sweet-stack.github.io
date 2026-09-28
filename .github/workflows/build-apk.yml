@@ -43,7 +43,7 @@ jobs:
           const startTag = html.indexOf(marker);
           const endTag = html.indexOf("</script>", startTag + marker.length);
           if (startTag < 0 || endTag < 0 || endTag <= startTag) throw new Error("Could not locate the main admin script.");
-          const script = html.slice(startTag + "<script>\\n".length, endTag);
+          const script = html.slice(startTag + "<script>\n".length, endTag);
           new Function(script);
           console.log("admin.html inline JavaScript syntax: OK");
           NODE
